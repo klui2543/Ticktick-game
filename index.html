@@ -24,9 +24,9 @@
   --axis: #c3c2b7;
   --hairline: rgba(11,11,11,0.10);
 
-  --cat-1: #2a78d6;   /* โครงสร้าง (skill/hub) */
-  --cat-2: #eb6834;   /* เควส */
-  --cat-3: #1baf7a;   /* แท็ก */
+  --cat-1: #2a78d6;
+  --cat-2: #eb6834;
+  --cat-3: #1baf7a;
 
   --pri-0: #86b6ef;
   --pri-1: #5598e7;
@@ -42,21 +42,11 @@
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --surface-1: #1a1a19;
-    --plane: #0d0d0d;
-    --ink-1: #ffffff;
-    --ink-2: #c3c2b7;
-    --ink-muted: #898781;
-    --grid: #2c2c2a;
-    --axis: #383835;
+    --surface-1: #1a1a19; --plane: #0d0d0d; --ink-1: #ffffff; --ink-2: #c3c2b7;
+    --ink-muted: #898781; --grid: #2c2c2a; --axis: #383835;
     --hairline: rgba(255,255,255,0.10);
-    --cat-1: #3987e5;
-    --cat-2: #d95926;
-    --cat-3: #199e70;
-    --pri-0: #184f95;
-    --pri-1: #256abf;
-    --pri-3: #3987e5;
-    --pri-5: #86b6ef;
+    --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70;
+    --pri-0: #184f95; --pri-1: #256abf; --pri-3: #3987e5; --pri-5: #86b6ef;
   }
 }
 :root[data-theme="dark"] {
@@ -89,7 +79,6 @@ button, .chip {
 button:hover { background: var(--plane); }
 button:disabled { opacity: .6; cursor: default; }
 button.primary { background: var(--cat-1); border-color: transparent; color: #fff; }
-button.primary:hover { filter: brightness(1.08); }
 input, select {
   font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px;
   border: 1px solid var(--axis); background: var(--surface-1); color: var(--ink-1);
@@ -101,7 +90,6 @@ h2 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
 .small { font-size: 13px; }
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-/* ── header ── */
 header.bar {
   position: sticky; top: 0; z-index: 20;
   background: color-mix(in srgb, var(--plane) 88%, transparent);
@@ -116,13 +104,11 @@ header.bar {
 .xpbar { height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; }
 .xpbar > i { display: block; height: 100%; background: var(--cat-1); border-radius: 3px; }
 
-/* ── filter row: หนึ่งแถวเหนือทุกอย่างที่มันคุม ── */
 .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
 .chip { padding: 7px 14px; border-radius: 999px; font-size: 14px; min-height: 38px; }
 .chip[aria-pressed="true"] { background: var(--ink-1); color: var(--plane); border-color: transparent; }
 
-/* ── check button ใช้ร่วมกันทั้ง gantt/table/tree/matrix ── */
-/* ปุ่มติ๊กเสร็จ — วงกลมเล็กแต่พื้นที่แตะจริงกว้าง 44px ผ่าน ::after
+/* ปุ่มติ๊กเสร็จ — วงกลมเล็กแต่พื้นที่แตะจริง 44px ผ่าน ::after
    (ขยายเฉพาะพื้นที่รับสัมผัส ไม่ดันเลย์เอาต์ให้ห่างขึ้น) */
 .tree-check {
   position: relative;
@@ -136,37 +122,26 @@ header.bar {
 }
 .done-flash { background: var(--good) !important; color: #fff !important; border-color: transparent !important; }
 
-/* ── gantt ── */
-.gantt { overflow-x: auto; }
-.gantt-inner { min-width: 560px; }
-.gseg { display: grid; align-items: center; column-gap: 0; }
-.glabel {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 8px 7px 0; font-size: 13.5px; line-height: 1.35;
+/* ── วันนี้: มุมมองหลักที่เปิดมาเจอก่อน ── */
+.tsec { margin-bottom: 18px; }
+.tsec:last-child { margin-bottom: 0; }
+.tsec-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.tsec-h b { font-size: 14px; font-weight: 600; }
+.tsec-h.over b { color: var(--crit); }
+.titem {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 4px; border-bottom: 1px solid var(--grid); min-height: 52px;
 }
-.glabel-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gcell { border-left: 1px solid var(--grid); height: 100%; }
-.gcell.today { background: color-mix(in srgb, var(--cat-1) 8%, transparent); }
-.gtrack { position: relative; height: 34px; }
-.gbar {
-  position: absolute; top: 8px; height: 18px; border-radius: 4px;
-  /* ช่องว่าง 2px ระหว่างแท่ง ใช้พื้นหลังคั่น ไม่ใช่เส้นขอบ */
-  margin: 0 1px; display: flex; align-items: center;
-  padding: 0 7px; font-size: 12px; color: #fff; overflow: hidden; white-space: nowrap;
-}
-.gbar.event { background: var(--axis) !important; color: var(--ink-1); }
-.gday {
-  font-size: 11px; text-align: center; padding: 5px 0; color: var(--ink-muted);
-  border-left: 1px solid var(--grid); font-variant-numeric: tabular-nums;
-}
-.gday.wk { color: var(--crit); }
-.ghead { font-size: 13px; font-weight: 500; padding: 12px 0 4px; color: var(--ink-2); }
+.titem:last-child { border-bottom: none; }
+.titem .body { flex: 1; min-width: 0; }
+.titem .t { font-size: 14.5px; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.titem .sub { font-size: 12px; color: var(--ink-muted); display: flex; gap: 6px; flex-wrap: wrap; }
+.pri-pill { width: 4px; align-self: stretch; border-radius: 2px; flex: none; }
 
-/* ── ผังความคิด: outline แบบกดขยาย/ยุบ แทน SVG กระจุก ── */
-.tree-node { margin: 1px 0; }
+/* ── ผังความคิด: outline กดขยาย/ยุบ ── */
 .tree-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 9px 6px; border-radius: 8px; cursor: pointer; min-height: 42px;
+  padding: 9px 6px; border-radius: 8px; cursor: pointer; min-height: 44px;
 }
 .tree-row:hover { background: var(--plane); }
 .tree-row.leaf { cursor: default; }
@@ -174,30 +149,69 @@ header.bar {
 .tree-chevron { width: 16px; height: 16px; flex: none; color: var(--ink-muted); transition: transform .15s; }
 .tree-node[data-open="true"] > .tree-row .tree-chevron { transform: rotate(90deg); }
 .tree-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
-.tree-meta { font-size: 12px; color: var(--ink-muted); flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tree-children {
-  margin-left: 19px; padding-left: 12px; border-left: 1px solid var(--grid);
-  display: none;
-}
+.tree-meta { font-size: 12px; color: var(--ink-muted); flex: none; max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-children { margin-left: 19px; padding-left: 12px; border-left: 1px solid var(--grid); display: none; }
 .tree-node[data-open="true"] > .tree-children { display: block; }
 .tree-step.done .tree-label { text-decoration: line-through; color: var(--ink-muted); }
 
-/* ── Eisenhower matrix ── */
+/* ── Eisenhower ── */
 .eisen { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 560px) { .eisen { grid-template-columns: 1fr; } }
-.equad { border: 1px solid var(--hairline); border-radius: 12px; padding: 10px; }
+.equad {
+  border: 1px solid var(--hairline); border-radius: 12px; padding: 10px;
+  transition: background .12s, border-color .12s; min-height: 96px;
+}
+.equad.dropping { border-color: var(--cat-1); background: color-mix(in srgb, var(--cat-1) 10%, transparent); }
 .equad h3 { font-size: 13.5px; font-weight: 600; margin: 0; display: flex; justify-content: space-between; align-items: baseline; }
 .equad h3 .n { color: var(--ink-muted); font-weight: 400; font-size: 12.5px; }
 .equad .hint { margin: 2px 0 8px; }
-.eitem { display: flex; align-items: center; gap: 8px; padding: 7px 2px; border-bottom: 1px solid var(--grid); font-size: 13.5px; }
+.eitem {
+  display: flex; align-items: center; gap: 8px; padding: 8px 2px;
+  border-bottom: 1px solid var(--grid); font-size: 13.5px; min-height: 46px;
+  background: var(--surface-1);
+}
 .eitem:last-child { border-bottom: none; }
 .eitem .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eitem.moved .t::after { content: ' ·'; color: var(--cat-1); }
+/* จับที่หูจับเท่านั้น นิ้วปัดบริเวณอื่นยังเลื่อนหน้าจอได้ตามปกติ */
+.egrip {
+  flex: none; width: 30px; height: 38px; display: grid; place-items: center;
+  color: var(--ink-muted); cursor: grab; touch-action: none; font-size: 15px;
+  border-radius: 6px; user-select: none; -webkit-user-select: none;
+}
+.egrip:active { cursor: grabbing; background: var(--plane); }
+.eitem.dragging { opacity: .35; }
+#drag-ghost {
+  position: fixed; z-index: 80; pointer-events: none; opacity: .95;
+  background: var(--surface-1); border: 1px solid var(--cat-1); border-radius: 10px;
+  padding: 9px 13px; font-size: 13.5px; max-width: 74vw;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,.28);
+}
 
-/* ── table view (ฝาแฝดที่อ่านค่าได้ครบ ไม่ต้องพึ่ง tooltip) ── */
 table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); }
 th { color: var(--ink-2); font-weight: 500; font-size: 12.5px; }
 td.num { font-variant-numeric: tabular-nums; }
+
+/* ── gantt ── */
+.gantt { overflow-x: auto; }
+.gantt-inner { min-width: 560px; }
+.gseg { display: grid; align-items: center; column-gap: 0; }
+.glabel { display: flex; align-items: center; gap: 6px; padding: 7px 8px 7px 0; font-size: 13.5px; line-height: 1.35; }
+.glabel-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcell { border-left: 1px solid var(--grid); height: 100%; }
+.gcell.today { background: color-mix(in srgb, var(--cat-1) 8%, transparent); }
+.gtrack { position: relative; height: 34px; }
+.gbar {
+  position: absolute; top: 8px; height: 18px; border-radius: 4px;
+  margin: 0 1px; display: flex; align-items: center;
+  padding: 0 7px; font-size: 12px; color: #fff; overflow: hidden; white-space: nowrap;
+}
+.gbar.event { background: var(--axis) !important; color: var(--ink-1); }
+.gday { font-size: 11px; text-align: center; padding: 5px 0; color: var(--ink-muted); border-left: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+.gday.wk { color: var(--crit); }
+.ghead { font-size: 13px; font-weight: 500; padding: 12px 0 4px; color: var(--ink-2); }
 
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; }
@@ -220,8 +234,8 @@ td.num { font-variant-numeric: tabular-nums; }
 .stale { opacity: .45; transition: opacity .2s; }
 .hidden { display: none !important; }
 .err { color: var(--crit); }
+.empty { text-align: center; padding: 26px 10px; color: var(--ink-muted); font-size: 14px; }
 
-/* ── มือถือ: ลดระยะห่าง เพิ่มพื้นที่แตะ ตัดสิ่งที่ไม่จำเป็นบนจอแคบ ── */
 @media (max-width: 480px) {
   .wrap { padding: 12px; }
   .card { padding: 12px; border-radius: 12px; }
@@ -240,7 +254,6 @@ td.num { font-variant-numeric: tabular-nums; }
 <div id="tip"></div>
 <div id="toast" class="hidden"></div>
 
-<!-- ── หน้าตั้งค่าครั้งแรก ── -->
 <section id="setup" class="wrap hidden">
   <div class="card">
     <h1>เชื่อมต่อกับ Apps Script</h1>
@@ -260,7 +273,6 @@ td.num { font-variant-numeric: tabular-nums; }
   </div>
 </section>
 
-<!-- ── แอปหลัก ── -->
 <div id="app" class="hidden">
   <header class="bar">
     <div class="wrap" style="padding-top:12px;padding-bottom:12px">
@@ -282,19 +294,33 @@ td.num { font-variant-numeric: tabular-nums; }
 
   <main class="wrap">
     <div class="filters" role="group" aria-label="มุมมอง">
-      <button class="chip" data-view="gantt" aria-pressed="true">ไทม์ไลน์</button>
-      <button class="chip" data-view="map" aria-pressed="false">ผังความคิด</button>
+      <button class="chip" data-view="today" aria-pressed="true">วันนี้</button>
       <button class="chip" data-view="matrix" aria-pressed="false">จัดลำดับ</button>
-      <button class="chip" data-view="table" aria-pressed="false">ตาราง</button>
-    </div>
-    <div class="filters" role="group" aria-label="ช่วงเวลา">
-      <button class="chip" id="chip-today" aria-pressed="false">วันนี้</button>
-      <button class="chip" data-range="7" aria-pressed="true">7 วัน</button>
-      <button class="chip" data-range="30" aria-pressed="false">1 เดือน</button>
+      <button class="chip" data-view="gantt" aria-pressed="false">ไทม์ไลน์</button>
+      <button class="chip" data-view="map" aria-pressed="false">ผังความคิด</button>
+      <button class="chip" data-view="table" aria-pressed="false">ทั้งหมด</button>
     </div>
 
-    <section id="v-gantt" class="card">
-      <h2>ไทม์ไลน์</h2>
+    <section id="v-today" class="card">
+      <div id="today-body"></div>
+    </section>
+
+    <section id="v-matrix" class="card hidden">
+      <h2>จัดลำดับความสำคัญ</h2>
+      <p class="small muted" style="margin:0 0 10px">
+        ลากที่หูจับ <span style="color:var(--ink-2)">⠿</span> เพื่อย้ายช่องเอง — ที่ย้ายเองจะถูกจำไว้ ไม่ถูกคำนวณทับ
+      </p>
+      <div class="eisen" id="eisen"></div>
+      <p class="small muted" style="margin:10px 0 0">
+        การเดาเริ่มต้น: <b>สำคัญ</b> = ความสำคัญปานกลางขึ้นไปใน TickTick · <b>ด่วน</b> = ถึงกำหนดใน 2 วันหรือเลยแล้ว
+      </p>
+    </section>
+
+    <section id="v-gantt" class="card hidden">
+      <div class="filters" style="margin-top:0">
+        <button class="chip" data-range="7" aria-pressed="true">7 วัน</button>
+        <button class="chip" data-range="30" aria-pressed="false">1 เดือน</button>
+      </div>
       <div class="legend" style="margin-bottom:10px">
         <span><i style="background:var(--pri-5)"></i>สำคัญมาก</span>
         <span><i style="background:var(--pri-3)"></i>ปานกลาง</span>
@@ -306,7 +332,6 @@ td.num { font-variant-numeric: tabular-nums; }
     </section>
 
     <section id="v-map" class="card hidden">
-      <h2>ผังความคิด</h2>
       <div class="legend" style="margin-bottom:6px">
         <span><i style="background:var(--cat-1)"></i>ทักษะ</span>
         <span><i style="background:var(--cat-2)"></i>เควส</span>
@@ -316,14 +341,7 @@ td.num { font-variant-numeric: tabular-nums; }
       <div id="tree"></div>
     </section>
 
-    <section id="v-matrix" class="card hidden">
-      <h2>จัดลำดับความสำคัญ</h2>
-      <p class="small muted" style="margin:0 0 10px">สำคัญ = priority ปานกลางขึ้นไป · ด่วน = ถึงกำหนดภายใน 2 วันหรือเลยแล้ว</p>
-      <div class="eisen" id="eisen"></div>
-    </section>
-
     <section id="v-table" class="card hidden">
-      <h2>ตาราง</h2>
       <div class="row" style="margin-bottom:10px">
         <input id="tbl-search" placeholder="ค้นหาชื่องาน…" style="max-width:220px">
         <select id="tbl-skill" style="max-width:200px"></select>
@@ -348,10 +366,16 @@ const XP_BY_PRIORITY = { 5: 25, 3: 15, 1: 10, 0: 5 };
 const PRI_LABEL = { 5: 'สำคัญมาก', 3: 'ปานกลาง', 1: 'ต่ำ', 0: 'ไม่ระบุ' };
 const BKK_TZ = 'Asia/Bangkok';
 
+const QUADS = [
+  { key: 'do',    title: 'ทำทันที',      hint: 'สำคัญ + ด่วน' },
+  { key: 'plan',  title: 'วางแผนทำ',     hint: 'สำคัญ แต่ยังไม่ด่วน' },
+  { key: 'quick', title: 'ทำเร็ว ๆ',     hint: 'ด่วน แต่ไม่ค่อยสำคัญ' },
+  { key: 'later', title: 'ทำทีหลังได้',  hint: 'ไม่ด่วน ไม่ค่อยสำคัญ' }
+];
+
 let STATE = null;
-let view = 'gantt';
+let view = 'today';
 let rangeDays = 7;
-let todayOnly = false;
 let tableSearch = '';
 let tableSkillFilter = '';
 let treeOpen = new Set();
@@ -384,12 +408,8 @@ $('#btn-connect').onclick = async () => {
   msg.textContent = 'กำลังทดสอบ...'; msg.className = 'small muted';
   localStorage.setItem(LS.url, url);
   localStorage.setItem(LS.token, token);
-  try {
-    await callApi('state');
-    location.reload();
-  } catch (e) {
-    msg.textContent = 'เชื่อมต่อไม่ได้: ' + e.message; msg.className = 'small err';
-  }
+  try { await callApi('state'); location.reload(); }
+  catch (e) { msg.textContent = 'เชื่อมต่อไม่ได้: ' + e.message; msg.className = 'small err'; }
 };
 
 $('#btn-sync').onclick = () => refresh('sync');
@@ -398,15 +418,12 @@ async function refresh(action) {
   const st = $('#status');
   st.textContent = action === 'sync' ? 'กำลังซิงก์…' : 'กำลังโหลด…';
   st.className = 'small muted';
-  // ไม่ล้างหน้าจอตอนโหลดใหม่ — หรี่ของเดิมไว้ ไม่ให้เลย์เอาต์กระโดด
   $('main').classList.add('stale');
   try {
     const j = await callApi(action || 'state');
     STATE = j.data;
     render();
-    st.textContent = j.stat
-      ? 'ซิงก์แล้ว · ' + j.stat.pulled + ' รายการ'
-      : '';
+    st.textContent = j.stat ? 'ซิงก์แล้ว · ' + j.stat.pulled + ' รายการ' : '';
   } catch (e) {
     st.textContent = 'ผิดพลาด: ' + e.message;
     st.className = 'small err';
@@ -415,20 +432,22 @@ async function refresh(action) {
   }
 }
 
-// ───────── วันที่ — ยึดเขตเวลาไทยเสมอ ไม่พึ่งเขตเวลาของเครื่อง/เบราว์เซอร์ ─────────
-// TickTick ส่งเวลาเป็น UTC เช่น "2026-07-31T17:00:00+0000" ซึ่งคือเที่ยงคืนของวันถัดไปตามเวลาไทย
-// ถ้าอ่านวันที่ด้วย .getDate()/.getDay() ของเบราว์เซอร์ตรงๆ ผลจะขึ้นกับเขตเวลาที่เครื่องนั้นตั้งไว้
-// (เจอเองตอนทดสอบในเครื่อง dev ที่ตั้งเป็น UTC — งานเลื่อนไปอีกวัน) จึงบังคับ format เป็น Asia/Bangkok เสมอ
+// ───────── วันที่ — ยึดเขตเวลาไทยเสมอ ไม่พึ่งเขตเวลาของเครื่อง ─────────
+// TickTick ส่งเวลาเป็น UTC เช่น "2026-07-31T17:00:00+0000" = เที่ยงคืน 1 ส.ค. เวลาไทย
+// ถ้าอ่านด้วย .getDate() ของเบราว์เซอร์ ผลจะขึ้นกับเขตเวลาเครื่อง และงานช่วง 00:00–07:00
+// จะแสดงเลื่อนไป 1 วัน จึงบังคับ format เป็น Asia/Bangkok ทุกจุด
 
 const bkkDayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: BKK_TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
 const bkkWeekdayFmt = new Intl.DateTimeFormat('en-US', { timeZone: BKK_TZ, weekday: 'short' });
 const bkkDateNumFmt = new Intl.DateTimeFormat('en-US', { timeZone: BKK_TZ, day: 'numeric' });
+const bkkNiceFmt = new Intl.DateTimeFormat('th-TH', { timeZone: BKK_TZ, day: 'numeric', month: 'short' });
 
 const toDate = v => { if (!v) return null; const d = new Date(v); return isNaN(d) ? null : d; };
 const bkkDayKey = v => { const d = toDate(v); return d ? bkkDayFmt.format(d) : null; };
 const bkkStartOfDay = v => { const k = bkkDayKey(v); return k ? new Date(k + 'T00:00:00+07:00') : null; };
 const bkkIsWeekend = d => { const w = bkkWeekdayFmt.format(d); return w === 'Sat' || w === 'Sun'; };
 const bkkDateNum = d => Number(bkkDateNumFmt.format(d));
+const bkkNice = v => { const d = toDate(v); return d ? bkkNiceFmt.format(d) : ''; };
 // ไทยไม่มี daylight saving จึงบวกวันด้วย 86400000 ms คงที่ได้อย่างปลอดภัย
 const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
 const todayBkk = () => bkkStartOfDay(new Date().toISOString());
@@ -446,9 +465,10 @@ function skillLabels() {
 
 const priColor = p => 'var(--pri-' + (({5:5,3:3,1:1}[Number(p)]) || 0) + ')';
 const xpOf = q => XP_BY_PRIORITY[String(Number(q.priority) || 0)] || 5;
-// สูตรเดียวกับ Xp.js ฝั่งเซิร์ฟเวอร์เป๊ะ (คำตอบของ 50L(L+1)=xp) ใช้แค่ประมาณผลทันทีที่หน้าจอ
-// ค่าจริงจะถูกแทนที่ด้วยผลจากเซิร์ฟเวอร์เสมอหลัง sync/complete เสร็จ
+// สูตรเดียวกับ Xp.js ฝั่งเซิร์ฟเวอร์ ใช้ประมาณผลทันทีบนหน้าจอ
+// ค่าจริงจะถูกแทนที่ด้วยผลจากเซิร์ฟเวอร์เสมอหลัง complete/sync เสร็จ
 const levelFromXp = xp => { if (!xp || xp < 0) return 0; const L = Math.floor((-1 + Math.sqrt(1 + xp / 12.5)) / 2); return L < 0 ? 0 : L; };
+const quests = () => (STATE.quests || []).filter(q => q.entityClass === 'quest');
 
 // ───────── toast ─────────
 
@@ -457,42 +477,39 @@ function toast(msg, isErr) {
   t.textContent = msg;
   t.classList.toggle('err', !!isErr);
   t.classList.remove('hidden');
-  // บังคับ reflow แล้วค่อยใส่คลาส แทนการรอ requestAnimationFrame
-  // rAF จะไม่ยิงเลยถ้าแท็บไม่ได้ compositing (พื้นหลัง/preview ที่ไม่แสดงผล)
-  // ซึ่งทำให้ข้อความแจ้งเตือนหายเงียบ — เจอตอนทดสอบ
+  // บังคับ reflow แทนการรอ requestAnimationFrame ซึ่งไม่ยิงถ้าแท็บไม่ compositing
   void t.offsetWidth;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), isErr ? 3200 : 1800);
+  toastTimer = setTimeout(() => t.classList.remove('show'), isErr ? 3400 : 1700);
 }
 
-// ───────── ปิดงาน — ตอบสนองทันทีที่กด ไม่รอ round-trip ไป Apps Script ─────────
+// ───────── ปิดงาน — ตอบสนองทันที ไม่รอ round-trip ─────────
 
 function pruneGraphNode(taskId) {
   if (!STATE.graph) return;
   const qid = 'q:' + taskId;
-  const removeIds = new Set([qid]);
-  STATE.graph.edges.filter(e => e.from === qid && e.type === 'substep').forEach(e => removeIds.add(e.to));
+  const rm = new Set([qid]);
+  STATE.graph.edges.filter(e => e.from === qid && e.type === 'substep').forEach(e => rm.add(e.to));
   STATE = Object.assign({}, STATE, {
     graph: {
-      nodes: STATE.graph.nodes.filter(n => !removeIds.has(n.id)),
-      edges: STATE.graph.edges.filter(e => !removeIds.has(e.from) && !removeIds.has(e.to))
+      nodes: STATE.graph.nodes.filter(n => !rm.has(n.id)),
+      edges: STATE.graph.edges.filter(e => !rm.has(e.from) && !rm.has(e.to))
     }
   });
 }
 
 function doComplete(taskId, btnEl) {
-  const q = (STATE.quests || []).find(x => x.taskId === taskId);
+  const q = quests().find(x => x.taskId === taskId);
   if (!q) return;
-  // ผลตอบรับที่เห็นทันทีตอนแตะ — ก่อนแม้แต่จะเริ่มคุยกับเซิร์ฟเวอร์
   if (btnEl) { btnEl.disabled = true; btnEl.textContent = '✓'; btnEl.classList.add('done-flash'); }
   toast('+' + xpOf(q) + ' XP · ' + q.title);
-  setTimeout(() => applyOptimisticComplete(taskId, q), 260);
+  setTimeout(() => applyOptimisticComplete(taskId, q), 240);
 }
 
 async function applyOptimisticComplete(taskId, q) {
   const prevQuests = STATE.quests, prevPlayer = STATE.player, prevGraph = STATE.graph;
-  const newXp = STATE.player.xp + xpOf(q);
+  const newXp = (STATE.player.xp || 0) + xpOf(q);
   STATE = Object.assign({}, STATE, {
     quests: STATE.quests.filter(x => x.taskId !== taskId),
     player: Object.assign({}, STATE.player, { xp: newXp, level: levelFromXp(newXp) })
@@ -505,7 +522,6 @@ async function applyOptimisticComplete(taskId, q) {
     STATE = j.data;
     render();
   } catch (e) {
-    // ยิงไม่สำเร็จ — คืนของเดิมทั้งหมด ไม่ปล่อยให้ XP หรือรายการค้างผิด
     STATE = Object.assign({}, STATE, { quests: prevQuests, player: prevPlayer, graph: prevGraph });
     render();
     toast('ปิดงานไม่สำเร็จ (' + e.message + ') — เอากลับมาให้แล้ว', true);
@@ -514,26 +530,17 @@ async function applyOptimisticComplete(taskId, q) {
 
 // ───────── มุมมอง ─────────
 
+const VIEWS = ['today', 'matrix', 'gantt', 'map', 'table'];
+
 $$('.chip[data-view]').forEach(b => b.onclick = () => {
   view = b.dataset.view;
   $$('.chip[data-view]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  $('#v-gantt').classList.toggle('hidden', view !== 'gantt');
-  $('#v-map').classList.toggle('hidden', view !== 'map');
-  $('#v-matrix').classList.toggle('hidden', view !== 'matrix');
-  $('#v-table').classList.toggle('hidden', view !== 'table');
+  VIEWS.forEach(v => $('#v-' + v).classList.toggle('hidden', v !== view));
   render();
 });
 
-$('#chip-today').onclick = function () {
-  todayOnly = !todayOnly;
-  this.setAttribute('aria-pressed', String(todayOnly));
-  render();
-};
-
 $$('.chip[data-range]').forEach(b => b.onclick = () => {
   rangeDays = Number(b.dataset.range);
-  todayOnly = false;
-  $('#chip-today').setAttribute('aria-pressed', 'false');
   $$('.chip[data-range]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   render();
 });
@@ -548,10 +555,182 @@ function render() {
   $('#xp-fill').style.width = pct + '%';
   $('#xp-line').textContent = p.xp + ' XP · อีก ' + Math.max(0, ceilXp - p.xp) + ' ถึงเลเวล ' + (p.level + 1);
 
-  if (view === 'gantt') renderGantt();
-  else if (view === 'map') renderTree();
+  if (view === 'today') renderToday();
   else if (view === 'matrix') renderMatrix();
+  else if (view === 'gantt') renderGantt();
+  else if (view === 'map') renderTree();
   else renderTable();
+}
+
+// ───────── วันนี้ — ลูปหลักที่ใช้ทุกวัน ─────────
+
+function taskItemHtml(q) {
+  const bits = [];
+  if (q.dueDate) bits.push(bkkNice(q.dueDate));
+  const total = Number(q.itemCount) || 0, done = Number(q.itemDoneCount) || 0;
+  if (total) bits.push(done + '/' + total + ' ขั้นย่อย');
+  bits.push(xpOf(q) + ' XP');
+  return '<div class="titem">' +
+    '<span class="pri-pill" style="background:' + priColor(q.priority) + '"></span>' +
+    '<div class="body"><div class="t">' + esc(q.title) + '</div>' +
+    '<div class="sub">' + bits.map(esc).join(' · ') + '</div></div>' +
+    '<button class="tree-check" data-done="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button>' +
+    '</div>';
+}
+
+function renderToday() {
+  const host = $('#today-body');
+  const t0 = todayBkk();
+  const todayKey = bkkDayKey(new Date());
+  const week = addDays(t0, 7);
+
+  const overdue = [], today = [], soon = [], someday = [];
+  quests().forEach(q => {
+    if (!q.dueDate) { someday.push(q); return; }
+    const d = bkkStartOfDay(q.dueDate);
+    const k = bkkDayKey(q.dueDate);
+    if (k === todayKey) today.push(q);
+    else if (d < t0) overdue.push(q);
+    else if (d < week) soon.push(q);
+  });
+
+  const byDue = (a, b) => (toDate(a.dueDate) || 0) - (toDate(b.dueDate) || 0);
+  const byPri = (a, b) => Number(b.priority) - Number(a.priority);
+
+  const sections = [
+    { t: 'เลยกำหนด', cls: 'over', items: overdue.sort(byDue) },
+    { t: 'วันนี้', cls: '', items: today.sort(byPri) },
+    { t: '7 วันข้างหน้า', cls: '', items: soon.sort(byDue) },
+    { t: 'ไม่มีกำหนด', cls: '', items: someday.sort(byPri) }
+  ].filter(s => s.items.length);
+
+  if (!sections.length) {
+    host.innerHTML = '<p class="empty">ไม่มีงานค้าง 🎉</p>';
+    return;
+  }
+
+  host.innerHTML = sections.map(s =>
+    '<div class="tsec"><div class="tsec-h ' + s.cls + '"><b>' + s.t + '</b>' +
+    '<span class="muted small">' + s.items.length + '</span></div>' +
+    s.items.map(taskItemHtml).join('') + '</div>'
+  ).join('');
+
+  host.querySelectorAll('button[data-done]').forEach(b => b.onclick = () => doComplete(b.dataset.done, b));
+}
+
+// ───────── Eisenhower + ลากย้ายช่องเอง ─────────
+
+function autoQuadrant(q) {
+  const soon = addDays(todayBkk(), 2);
+  const d = bkkStartOfDay(q.dueDate);
+  const urgent = !!d && d <= soon;              // เลยกำหนดแล้วก็นับว่าด่วน
+  const important = Number(q.priority) >= 3;    // ปานกลางขึ้นไปใน TickTick
+  if (important && urgent) return 'do';
+  if (important) return 'plan';
+  if (urgent) return 'quick';
+  return 'later';
+}
+
+// ช่องที่ลากเองชนะการเดาเสมอ และไม่ถูกคำนวณทับตอน sync
+const quadrantOf = q => ((STATE.overrides || {})[q.taskId]) || autoQuadrant(q);
+
+function renderMatrix() {
+  const host = $('#eisen');
+  const overrides = STATE.overrides || {};
+  const buckets = {}; QUADS.forEach(q => buckets[q.key] = []);
+  quests().forEach(q => buckets[quadrantOf(q)].push(q));
+
+  host.innerHTML = QUADS.map(qd => {
+    const items = buckets[qd.key].sort((a, b) => (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15));
+    return '<div class="equad" data-quad="' + qd.key + '">' +
+      '<h3>' + qd.title + '<span class="n">' + items.length + '</span></h3>' +
+      '<p class="small muted hint">' + qd.hint + '</p>' +
+      (items.length ? items.map(q =>
+        '<div class="eitem' + (overrides[q.taskId] ? ' moved' : '') + '" data-id="' + esc(q.taskId) + '">' +
+        '<span class="egrip" data-grip="' + esc(q.taskId) + '" aria-label="ลากเพื่อย้าย">⠿</span>' +
+        '<span class="tree-dot" style="background:' + priColor(q.priority) + '"></span>' +
+        '<span class="t">' + esc(q.title) + '</span>' +
+        '<span class="muted small">' + (q.dueDate ? bkkNice(q.dueDate) : '') + '</span>' +
+        '<button class="tree-check" data-done="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button></div>'
+      ).join('') : '<p class="muted small">ไม่มีงาน</p>') +
+      '</div>';
+  }).join('');
+
+  host.querySelectorAll('button[data-done]').forEach(b => b.onclick = () => doComplete(b.dataset.done, b));
+  host.querySelectorAll('.egrip').forEach(bindDrag);
+}
+
+/**
+ * ลากด้วย Pointer Events ไม่ใช่ HTML5 drag-and-drop
+ * เพราะ HTML5 DnD ใช้กับการแตะบนมือถือไม่ได้เลย
+ * จับเฉพาะที่หูจับ (touch-action:none) เพื่อให้ปัดที่อื่นยังเลื่อนหน้าจอได้ตามปกติ
+ */
+function bindDrag(grip) {
+  grip.onpointerdown = e => {
+    e.preventDefault();
+    const taskId = grip.dataset.grip;
+    const item = grip.closest('.eitem');
+    const fromQuad = grip.closest('.equad').dataset.quad;
+
+    // setPointerCapture โยน NotFoundError ได้ถ้า pointer ไม่ active แล้ว
+    // ปล่อยให้ล้มเงียบได้ เพราะเราไม่ได้พึ่งมัน — ฟัง move/up ที่ window แทน
+    // ซึ่งทนกว่าและไม่หลุดถ้านิ้วเลื่อนออกนอกตัวหูจับ
+    try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+
+    const ghost = document.createElement('div');
+    ghost.id = 'drag-ghost';
+    ghost.textContent = item.querySelector('.t').textContent;
+    document.body.appendChild(ghost);
+    item.classList.add('dragging');
+
+    let overQuad = null;
+    const move = ev => {
+      ghost.style.left = (ev.clientX + 14) + 'px';
+      ghost.style.top = (ev.clientY - 18) + 'px';
+      ghost.style.display = 'none';
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      ghost.style.display = '';
+      const quad = under && under.closest ? under.closest('.equad') : null;
+      if (quad !== overQuad) {
+        if (overQuad) overQuad.classList.remove('dropping');
+        overQuad = quad;
+        if (overQuad) overQuad.classList.add('dropping');
+      }
+    };
+
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      ghost.remove();
+      item.classList.remove('dragging');
+      const target = overQuad ? overQuad.dataset.quad : null;
+      if (overQuad) overQuad.classList.remove('dropping');
+      if (target && target !== fromQuad) setQuadrant(taskId, target);
+    };
+
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    move(e);
+  };
+}
+
+async function setQuadrant(taskId, quadrant) {
+  const prev = Object.assign({}, STATE.overrides || {});
+  STATE = Object.assign({}, STATE, {
+    overrides: Object.assign({}, prev, { [taskId]: quadrant })
+  });
+  renderMatrix();
+  const label = (QUADS.find(q => q.key === quadrant) || {}).title || quadrant;
+  toast('ย้ายไป “' + label + '”');
+  try {
+    await callApi('setQuadrant', { taskId, quadrant });
+  } catch (e) {
+    STATE = Object.assign({}, STATE, { overrides: prev });
+    renderMatrix();
+    toast('ย้ายไม่สำเร็จ (' + e.message + ')', true);
+  }
 }
 
 // ───────── ไทม์ไลน์ ─────────
@@ -560,10 +739,9 @@ function renderGantt() {
   const host = $('#gantt-body');
   const labels = skillLabels();
   const t0 = todayBkk();
-  const effDays = todayOnly ? 1 : rangeDays;
-  const days = Array.from({ length: effDays }, (_, i) => addDays(t0, i));
-  const tEnd = addDays(t0, effDays);
-  const cols = 'var(--gantt-label-w) repeat(' + effDays + ', minmax(26px, 1fr))';
+  const days = Array.from({ length: rangeDays }, (_, i) => addDays(t0, i));
+  const tEnd = addDays(t0, rangeDays);
+  const cols = 'var(--gantt-label-w) repeat(' + rangeDays + ', minmax(26px, 1fr))';
 
   const rows = (STATE.quests || []).filter(q => {
     const s = toDate(q.startDate), d = toDate(q.dueDate);
@@ -572,61 +750,51 @@ function renderGantt() {
     return b >= t0 && a < tEnd;
   });
 
-  let html = '';
-
-  // แถวหัววันที่
-  html += '<div class="gseg" style="grid-template-columns:' + cols + '">';
-  html += '<div></div>';
+  let html = '<div class="gseg" style="grid-template-columns:' + cols + '"><div></div>';
   days.forEach(d => {
     html += '<div class="gday' + (bkkIsWeekend(d) ? ' wk' : '') + '">' + bkkDateNum(d) + '</div>';
   });
   html += '</div>';
 
-  // จัดกลุ่มตามทักษะ — ใช้หัวข้อข้อความแทนการใช้สีแยก 7 ทักษะ
   const groups = {};
   rows.filter(q => q.entityClass === 'quest').forEach(q => {
     (groups[q.skillId || 'unsorted'] = groups[q.skillId || 'unsorted'] || []).push(q);
   });
 
-  // เรียงตามลำดับ column จริงที่มาจาก graph ไม่ใช่เรียงตามตัวอักษรของ skillId
   const order = ((STATE.graph && STATE.graph.nodes) || [])
     .filter(n => n.type === 'skill' || n.type === 'hub').map(n => n.skillId);
   const rank = s => { const i = order.indexOf(s); return i < 0 ? 999 : i; };
 
   Object.keys(groups).sort((a, b) => rank(a) - rank(b)).forEach(sk => {
     html += '<div class="ghead">' + esc(labels[sk] || sk) + '</div>';
-    groups[sk]
-      .sort((a, b) => (toDate(a.dueDate) || 0) - (toDate(b.dueDate) || 0))
-      .forEach(q => { html += ganttRow(q, t0, cols, effDays, false); });
+    groups[sk].sort((a, b) => (toDate(a.dueDate) || 0) - (toDate(b.dueDate) || 0))
+      .forEach(q => { html += ganttRow(q, t0, cols, false); });
   });
 
   const events = rows.filter(q => q.entityClass === 'event');
   if (events.length) {
     html += '<div class="ghead">ตารางเวร · ' + events.length + ' รายการ (ไม่ได้ XP)</div>';
     events.sort((a, b) => (toDate(a.startDate) || 0) - (toDate(b.startDate) || 0))
-      .forEach(q => { html += ganttRow(q, t0, cols, effDays, true); });
+      .forEach(q => { html += ganttRow(q, t0, cols, true); });
   }
 
-  host.innerHTML = html || '<p class="muted small">ไม่มีงานในช่วงนี้</p>';
+  host.innerHTML = html;
   host.querySelectorAll('.gbar').forEach(bindTip);
-  host.querySelectorAll('.gcheck').forEach(b => b.onclick = e => { e.stopPropagation(); doComplete(b.dataset.id, b); });
+  host.querySelectorAll('button[data-done]').forEach(b => b.onclick = e => { e.stopPropagation(); doComplete(b.dataset.done, b); });
 }
 
-function ganttRow(q, t0, cols, effDays, isEvent) {
+function ganttRow(q, t0, cols, isEvent) {
   const s = toDate(q.startDate) || toDate(q.dueDate);
   const d = toDate(q.dueDate) || s;
   let a = Math.floor((bkkStartOfDay(s) - t0) / 86400000);
   let b = Math.floor((bkkStartOfDay(d) - t0) / 86400000);
-  a = Math.max(0, a); b = Math.min(effDays - 1, Math.max(b, a));
-  const left = (a / effDays * 100), width = ((b - a + 1) / effDays * 100);
-
+  a = Math.max(0, a); b = Math.min(rangeDays - 1, Math.max(b, a));
+  const left = (a / rangeDays * 100), width = ((b - a + 1) / rangeDays * 100);
   const done = Number(q.itemDoneCount) || 0, total = Number(q.itemCount) || 0;
   const sub = total ? ' (' + done + '/' + total + ')' : '';
 
   let cells = '';
-  for (let i = 0; i < effDays; i++) {
-    cells += '<div class="gcell' + (i === 0 ? ' today' : '') + '"></div>';
-  }
+  for (let i = 0; i < rangeDays; i++) cells += '<div class="gcell' + (i === 0 ? ' today' : '') + '"></div>';
 
   const tip = esc(q.title) + ' · ' + PRI_LABEL[Number(q.priority) || 0] +
     (isEvent ? '' : ' · ' + xpOf(q) + ' XP') +
@@ -635,22 +803,17 @@ function ganttRow(q, t0, cols, effDays, isEvent) {
   return '<div class="gseg" style="grid-template-columns:' + cols + '">' +
     '<div class="glabel" title="' + esc(q.title) + '">' +
       '<span class="glabel-t">' + esc(q.title) + sub + '</span>' +
-      (isEvent ? '' : '<button class="tree-check gcheck" data-id="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button>') +
+      (isEvent ? '' : '<button class="tree-check" data-done="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button>') +
     '</div>' +
     '<div style="grid-column:2/-1;position:relative">' +
-      '<div class="gseg" style="grid-template-columns:repeat(' + effDays + ',1fr);position:absolute;inset:0">' + cells + '</div>' +
-      '<div class="gtrack">' +
-        '<div class="gbar' + (isEvent ? ' event' : '') + '" data-tip="' + tip + '" ' +
-          'style="left:' + left + '%;width:' + width + '%;background:' + (isEvent ? '' : priColor(q.priority)) + '">' +
-          (width > 12 ? esc(q.title) : '') +
-        '</div>' +
-      '</div>' +
+      '<div class="gseg" style="grid-template-columns:repeat(' + rangeDays + ',1fr);position:absolute;inset:0">' + cells + '</div>' +
+      '<div class="gtrack"><div class="gbar' + (isEvent ? ' event' : '') + '" data-tip="' + tip + '" ' +
+        'style="left:' + left + '%;width:' + width + '%;background:' + (isEvent ? '' : priColor(q.priority)) + '">' +
+        (width > 12 ? esc(q.title) : '') + '</div></div>' +
     '</div></div>';
 }
 
 // ───────── ผังความคิด: outline กดขยาย/ยุบ ─────────
-// เดิมเป็น SVG แบบเรเดียลที่วาดทุก node พร้อมกัน — กระจุกและอ่านยากเมื่อมีงานเยอะ
-// เปลี่ยนเป็น outline ที่เริ่มยุบทั้งหมด กดเพื่อขยายทีละชั้น เห็นแค่สิ่งที่สนใจจริง ๆ
 
 function renderTree() {
   const host = $('#tree');
@@ -658,18 +821,13 @@ function renderTree() {
   const byId = {}; g.nodes.forEach(n => byId[n.id] = n);
   const childrenOf = {};
   g.edges.forEach(e => {
-    if (e.type === 'contains' || e.type === 'substep') {
-      (childrenOf[e.from] = childrenOf[e.from] || []).push(e.to);
-    }
+    if (e.type === 'contains' || e.type === 'substep') (childrenOf[e.from] = childrenOf[e.from] || []).push(e.to);
   });
   const project = g.nodes.find(n => n.type === 'project');
   const roots = project ? (childrenOf[project.id] || []) : [];
 
-  function dotColor(n) {
-    if (n.type === 'hub' || n.type === 'skill') return 'var(--cat-1)';
-    if (n.type === 'quest') return 'var(--cat-2)';
-    return 'var(--ink-muted)';
-  }
+  const dotColor = n => (n.type === 'hub' || n.type === 'skill') ? 'var(--cat-1)'
+    : n.type === 'quest' ? 'var(--cat-2)' : 'var(--ink-muted)';
 
   function buildNode(id) {
     const n = byId[id]; if (!n) return '';
@@ -682,9 +840,8 @@ function renderTree() {
     if (n.type === 'skill' || n.type === 'hub') meta.push(kids.length + ' เควส');
     if (n.type === 'quest') {
       meta.push(PRI_LABEL[Number(n.priority) || 0]);
-      if (n.dueDate) meta.push(bkkDayKey(n.dueDate));
-      if (n.xpValue) meta.push(n.xpValue + ' XP');
-      // แท็กร่วม — พับเข้าเป็นข้อความแทนกิ่งแยก จะได้ไม่เพิ่มเส้นให้รก
+      if (n.dueDate) meta.push(bkkNice(n.dueDate));
+      // แท็กร่วมพับเป็นข้อความ ไม่แตกเป็นกิ่งแยก จะได้ไม่เพิ่มเส้นให้รก
       const tags = g.edges.filter(e => e.type === 'tagged' && e.from === id)
         .map(e => (byId[e.to] || {}).label).filter(Boolean);
       if (tags.length) meta.push('🏷️ ' + tags.join(', '));
@@ -696,86 +853,43 @@ function renderTree() {
       '<span class="tree-dot" style="background:' + dotColor(n) + (isStep && n.status === 2 ? ';opacity:.35' : '') + '"></span>' +
       '<span class="tree-label">' + esc(n.label) + '</span>' +
       (meta.length ? '<span class="tree-meta">' + esc(meta.join(' · ')) + '</span>' : '') +
-      (n.type === 'quest' ? '<button class="tree-check" data-id="' + esc(n.srcTaskId || '') + '" aria-label="ทำเสร็จ">✓</button>' : '');
+      (n.type === 'quest' ? '<button class="tree-check" data-done="' + esc(n.srcTaskId || '') + '" aria-label="ทำเสร็จ">✓</button>' : '');
 
     let html = '<div class="tree-node tree-step' + (isStep && n.status === 2 ? ' done' : '') +
       '" data-open="' + open + '" data-id="' + esc(id) + '">' +
       '<div class="tree-row' + (hasKids ? '' : ' leaf') + '">' + rowInner + '</div>';
     if (hasKids) html += '<div class="tree-children">' + kids.map(buildNode).join('') + '</div>';
-    html += '</div>';
-    return html;
+    return html + '</div>';
   }
 
-  host.innerHTML = roots.map(buildNode).join('') || '<p class="muted small">ยังไม่มีข้อมูล ลองกดซิงก์ก่อน</p>';
+  host.innerHTML = roots.map(buildNode).join('') || '<p class="empty">ยังไม่มีข้อมูล ลองกดซิงก์ก่อน</p>';
 
   host.querySelectorAll('.tree-row').forEach(row => {
     row.onclick = e => {
       if (e.target.closest('.tree-check')) return;
-      const node = row.parentElement;
-      const id = node.dataset.id;
+      const id = row.parentElement.dataset.id;
       if (!(childrenOf[id] || []).length) return;
       if (treeOpen.has(id)) treeOpen.delete(id); else treeOpen.add(id);
       renderTree();
     };
   });
-  host.querySelectorAll('.tree-check').forEach(b => b.onclick = e => { e.stopPropagation(); doComplete(b.dataset.id, b); });
+  host.querySelectorAll('button[data-done]').forEach(b => b.onclick = e => { e.stopPropagation(); doComplete(b.dataset.done, b); });
 }
 
-// ───────── จัดลำดับความสำคัญ (Eisenhower matrix) ─────────
-
-function renderMatrix() {
-  const host = $('#eisen');
-  const soon = addDays(todayBkk(), 2);
-  const quests = (STATE.quests || []).filter(q => q.entityClass === 'quest');
-
-  const isImportant = q => Number(q.priority) >= 3;
-  const isUrgent = q => {
-    const d = bkkStartOfDay(q.dueDate);
-    return !!d && d <= soon; // เลยกำหนดแล้ว หรือถึงภายใน 2 วัน
-  };
-
-  const quads = [
-    { title: 'ทำทันที', hint: 'สำคัญ + ด่วน', items: quests.filter(q => isImportant(q) && isUrgent(q)) },
-    { title: 'วางแผนทำ', hint: 'สำคัญ แต่ยังไม่ด่วน', items: quests.filter(q => isImportant(q) && !isUrgent(q)) },
-    { title: 'ทำเร็ว ๆ', hint: 'ด่วน แต่ไม่ค่อยสำคัญ', items: quests.filter(q => !isImportant(q) && isUrgent(q)) },
-    { title: 'ทำทีหลังได้', hint: 'ไม่ด่วน ไม่ค่อยสำคัญ', items: quests.filter(q => !isImportant(q) && !isUrgent(q)) }
-  ];
-
-  host.innerHTML = quads.map(qd =>
-    '<div class="equad"><h3>' + qd.title + '<span class="n">' + qd.items.length + '</span></h3>' +
-    '<p class="small muted hint">' + qd.hint + '</p>' +
-    (qd.items.length
-      ? qd.items.sort((a, b) => (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15)).map(q =>
-          '<div class="eitem"><span class="tree-dot" style="background:' + priColor(q.priority) + '"></span>' +
-          '<span class="t">' + esc(q.title) + '</span>' +
-          '<span class="muted small">' + (q.dueDate ? bkkDayKey(q.dueDate) : '') + '</span>' +
-          '<button class="tree-check" data-id="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button></div>'
-        ).join('')
-      : '<p class="muted small">ไม่มีงาน</p>') +
-    '</div>'
-  ).join('');
-
-  host.querySelectorAll('.tree-check').forEach(b => b.onclick = () => doComplete(b.dataset.id, b));
-}
-
-// ───────── ตาราง ─────────
+// ───────── ทั้งหมด (ตาราง) ─────────
 
 function renderTable() {
   const labels = skillLabels();
-
   const sel = $('#tbl-skill');
-  if (sel.dataset.built !== '1' || sel.childElementCount <= 1) {
-    const cur = tableSkillFilter;
+  if (sel.dataset.built !== '1') {
     sel.innerHTML = '<option value="">ทุกทักษะ</option>' +
-      Object.keys(labels).map(id => '<option value="' + esc(id) + '"' + (id === cur ? ' selected' : '') + '>' + esc(labels[id]) + '</option>').join('');
+      Object.keys(labels).map(id => '<option value="' + esc(id) + '">' + esc(labels[id]) + '</option>').join('');
     sel.dataset.built = '1';
   }
 
-  const todayKey = bkkDayKey(new Date());
-  let rows = (STATE.quests || []).filter(q => q.entityClass === 'quest');
+  let rows = quests();
   if (tableSearch) rows = rows.filter(q => q.title.toLowerCase().includes(tableSearch));
   if (tableSkillFilter) rows = rows.filter(q => (q.skillId || 'unsorted') === tableSkillFilter);
-  if (todayOnly) rows = rows.filter(q => q.dueDate && bkkDayKey(q.dueDate) === todayKey);
   rows = rows.sort((a, b) => (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15));
 
   const tb = $('#tbl').querySelector('tbody');
@@ -796,9 +910,9 @@ function renderTable() {
 }
 
 $('#tbl-search').oninput = e => { tableSearch = e.target.value.trim().toLowerCase(); renderTable(); };
-$('#tbl-skill').onchange = e => { tableSkillFilter = e.target.value; e.target.dataset.built = '1'; renderTable(); };
+$('#tbl-skill').onchange = e => { tableSkillFilter = e.target.value; renderTable(); };
 
-// ───────── tooltip (เสริมเท่านั้น — ค่าทุกตัวอ่านได้จากแท็บตาราง/ผังความคิด) ─────────
+// ───────── tooltip (เสริมเท่านั้น — ค่าทุกตัวอ่านได้จากมุมมองอื่น) ─────────
 
 function bindTip(el) {
   const tip = $('#tip');
@@ -824,20 +938,17 @@ if (!cfg().url || !cfg().token) {
   refresh('state');
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 /**
- * ช่องทางตรวจสอบจากคอนโซล — ใส่ข้อมูลจำลองแล้ววาดใหม่ได้โดยไม่ต้องต่อ API
- * ใช้ตอนพัฒนา UI และตอนไล่ปัญหาหน้าจอเพี้ยนบนมือถือ
- * เป็นตัวอ่าน/เขียนสถานะที่มีอยู่แล้ว ไม่ได้เปิดอะไรที่ API ไม่ให้อยู่แล้ว
+ * ช่องทางตรวจสอบจากคอนโซล — ใส่ข้อมูลจำลองแล้ววาดใหม่โดยไม่ต้องต่อ API
+ * ใช้ตอนพัฒนา UI และไล่ปัญหาหน้าจอเพี้ยนบนมือถือ
  */
 window.TG = {
   get state() { return STATE; },
   set state(v) { STATE = v; },
-  render, refresh, callApi, doComplete,
-  bkkDayKey, bkkStartOfDay
+  render, refresh, callApi, doComplete, setQuadrant,
+  autoQuadrant, quadrantOf, bkkDayKey, bkkStartOfDay
 };
 </script>
 </body>
