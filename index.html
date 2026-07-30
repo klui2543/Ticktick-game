@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Task game</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── palette: ค่าจาก dataviz reference ผ่าน validator ทั้ง light/dark ──
+   หมวดหมู่ใช้แค่ 3 ช่องแรก เพราะเกินนั้นแยกไม่ออกเมื่อตาบอดสีในผังที่ทุกคู่ติดกันได้
+   ความสำคัญใช้ ordinal ramp สีเดียวไล่เข้ม (priority มีลำดับจริง จึงไม่ใช่ ramp บนหมวดหมู่) */
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --plane: #f9f9f7;
+  --ink-1: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --hairline: rgba(11,11,11,0.10);
+
+  --cat-1: #2a78d6;   /* โครงสร้าง (skill/hub) */
+  --cat-2: #eb6834;   /* เควส */
+  --cat-3: #1baf7a;   /* แท็ก */
+
+  --pri-0: #86b6ef;
+  --pri-1: #5598e7;
+  --pri-3: #2a78d6;
+  --pri-5: #184f95;
+
+  --good: #0ca30c;
+  --warn: #fab219;
+  --crit: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane: #0d0d0d;
+    --ink-1: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --hairline: rgba(255,255,255,0.10);
+    --cat-1: #3987e5;
+    --cat-2: #d95926;
+    --cat-3: #199e70;
+    --pri-0: #184f95;
+    --pri-1: #256abf;
+    --pri-3: #3987e5;
+    --pri-5: #86b6ef;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19; --plane: #0d0d0d; --ink-1: #ffffff; --ink-2: #c3c2b7;
+  --ink-muted: #898781; --grid: #2c2c2a; --axis: #383835;
+  --hairline: rgba(255,255,255,0.10);
+  --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70;
+  --pri-0: #184f95; --pri-1: #256abf; --pri-3: #3987e5; --pri-5: #86b6ef;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--plane); color: var(--ink-1);
+  font: 400 15px/1.6 Kanit, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.card {
+  background: var(--surface-1); border: 1px solid var(--hairline);
+  border-radius: 14px; padding: 16px;
+}
+button {
+  font: inherit; cursor: pointer; border-radius: 10px;
+  border: 1px solid var(--hairline); background: var(--surface-1); color: var(--ink-1);
+  padding: 8px 14px; min-height: 40px;
+}
+button:hover { background: var(--plane); }
+button.primary { background: var(--cat-1); border-color: transparent; color: #fff; }
+button.primary:hover { filter: brightness(1.08); }
+input {
+  font: inherit; width: 100%; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--axis); background: var(--surface-1); color: var(--ink-1);
+}
+h1 { font-size: 20px; font-weight: 600; margin: 0; }
+h2 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+.muted { color: var(--ink-muted); }
+.sec { color: var(--ink-2); }
+.small { font-size: 13px; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── header ── */
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--plane) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--hairline);
+}
+.lvl {
+  display: grid; place-items: center; width: 44px; height: 44px; flex: none;
+  border-radius: 50%; background: var(--cat-1); color: #fff;
+  font-weight: 600; font-size: 17px;
+}
+.xpbar { height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+.xpbar > i { display: block; height: 100%; background: var(--cat-1); border-radius: 3px; }
+
+/* ── filter row: หนึ่งแถวเหนือทุกอย่างที่มันคุม ── */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+.chip {
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--hairline);
+  background: var(--surface-1); font-size: 14px; min-height: 38px;
+}
+.chip[aria-pressed="true"] { background: var(--ink-1); color: var(--plane); border-color: transparent; }
+
+/* ── gantt ── */
+.gantt { overflow-x: auto; }
+.gantt-inner { min-width: 640px; }
+.gseg { display: grid; align-items: center; column-gap: 0; }
+.glabel {
+  padding: 7px 10px 7px 0; font-size: 13.5px; line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gcell { border-left: 1px solid var(--grid); height: 100%; }
+.gcell.today { background: color-mix(in srgb, var(--cat-1) 8%, transparent); }
+.gtrack { position: relative; height: 34px; }
+.gbar {
+  position: absolute; top: 8px; height: 18px; border-radius: 4px;
+  /* ช่องว่าง 2px ระหว่างแท่ง ใช้พื้นหลังคั่น ไม่ใช่เส้นขอบ */
+  margin: 0 1px; display: flex; align-items: center;
+  padding: 0 7px; font-size: 12px; color: #fff; overflow: hidden; white-space: nowrap;
+}
+.gbar.event { background: var(--axis) !important; color: var(--ink-1); }
+.gday {
+  font-size: 11px; text-align: center; padding: 5px 0; color: var(--ink-muted);
+  border-left: 1px solid var(--grid); font-variant-numeric: tabular-nums;
+}
+.gday.wk { color: var(--crit); }
+.ghead { font-size: 13px; font-weight: 500; padding: 12px 0 4px; color: var(--ink-2); }
+
+/* ── mindmap ── */
+#map { width: 100%; height: 520px; display: block; touch-action: none; }
+#map text { font-family: Kanit, system-ui, sans-serif; }
+
+/* ── table view (ฝาแฝดที่อ่านค่าได้ครบ ไม่ต้องพึ่ง tooltip) ── */
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); }
+th { color: var(--ink-2); font-weight: 500; font-size: 12.5px; }
+td.num { font-variant-numeric: tabular-nums; }
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; }
+
+#tip {
+  position: fixed; pointer-events: none; opacity: 0; transition: opacity .12s;
+  background: var(--ink-1); color: var(--plane); font-size: 12.5px;
+  padding: 7px 10px; border-radius: 8px; max-width: 260px; z-index: 60;
+}
+.stale { opacity: .45; transition: opacity .2s; }
+.hidden { display: none !important; }
+.err { color: var(--crit); }
+</style>
+</head>
+<body>
+
+<div id="tip"></div>
+
+<!-- ── หน้าตั้งค่าครั้งแรก ── -->
+<section id="setup" class="wrap hidden">
+  <div class="card">
+    <h1>เชื่อมต่อกับ Apps Script</h1>
+    <p class="sec small">ใส่ครั้งเดียว เก็บไว้ในเครื่องนี้เท่านั้น ไม่ได้ฝังในไฟล์เว็บ</p>
+    <div style="display:grid;gap:12px;margin-top:14px">
+      <label class="small sec">Web app URL (ลงท้าย /exec)
+        <input id="in-url" placeholder="https://script.google.com/macros/s/.../exec">
+      </label>
+      <label class="small sec">Token (จาก step6_setupApi)
+        <input id="in-token" placeholder="32 ตัวอักษร">
+      </label>
+      <div class="row">
+        <button class="primary" id="btn-connect">เชื่อมต่อ</button>
+        <span id="setup-msg" class="small"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── แอปหลัก ── -->
+<div id="app" class="hidden">
+  <header class="bar">
+    <div class="wrap" style="padding-top:12px;padding-bottom:12px">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <div class="lvl" id="lvl">0</div>
+          <div>
+            <div style="font-weight:500" id="xp-line">0 XP</div>
+            <div class="xpbar" style="width:150px"><i id="xp-fill" style="width:0%"></i></div>
+          </div>
+        </div>
+        <div class="row">
+          <span id="status" class="small muted"></span>
+          <button id="btn-sync">ซิงก์</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="filters" role="group" aria-label="ตัวกรอง">
+      <button class="chip" data-view="gantt" aria-pressed="true">ไทม์ไลน์</button>
+      <button class="chip" data-view="map" aria-pressed="false">ผังความคิด</button>
+      <button class="chip" data-view="table" aria-pressed="false">ตาราง</button>
+      <span style="flex:1"></span>
+      <button class="chip" data-range="7" aria-pressed="true">7 วัน</button>
+      <button class="chip" data-range="30" aria-pressed="false">1 เดือน</button>
+    </div>
+
+    <section id="v-gantt" class="card">
+      <h2>ไทม์ไลน์</h2>
+      <div class="legend" style="margin-bottom:10px">
+        <span><i style="background:var(--pri-5)"></i>สำคัญมาก</span>
+        <span><i style="background:var(--pri-3)"></i>ปานกลาง</span>
+        <span><i style="background:var(--pri-1)"></i>ต่ำ</span>
+        <span><i style="background:var(--pri-0)"></i>ไม่ระบุ</span>
+        <span><i style="background:var(--axis)"></i>ตารางเวร (ไม่ได้ XP)</span>
+      </div>
+      <div class="gantt"><div class="gantt-inner" id="gantt-body"></div></div>
+    </section>
+
+    <section id="v-map" class="card hidden">
+      <h2>ผังความคิด</h2>
+      <div class="legend" style="margin-bottom:6px">
+        <span><i style="background:var(--cat-1)"></i>ทักษะ</span>
+        <span><i style="background:var(--cat-2)"></i>เควส</span>
+        <span><i style="background:var(--cat-3)"></i>แท็กร่วม</span>
+        <span><i style="background:var(--ink-muted)"></i>ขั้นย่อย</span>
+      </div>
+      <svg id="map"></svg>
+      <p class="small muted" style="margin:6px 0 0">ลากเพื่อเลื่อน · เลื่อนนิ้ว/ล้อเพื่อซูม</p>
+    </section>
+
+    <section id="v-table" class="card hidden">
+      <h2>ตาราง</h2>
+      <div style="overflow-x:auto">
+        <table id="tbl">
+          <thead><tr>
+            <th>งาน</th><th>ทักษะ</th><th>สำคัญ</th><th>กำหนด</th><th>ขั้นย่อย</th><th>XP</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+const LS = { url: 'tg_url', token: 'tg_token' };
+const XP_BY_PRIORITY = { 5: 25, 3: 15, 1: 10, 0: 5 };
+const PRI_LABEL = { 5: 'สำคัญมาก', 3: 'ปานกลาง', 1: 'ต่ำ', 0: 'ไม่ระบุ' };
+
+let STATE = null;
+let view = 'gantt';
+let rangeDays = 7;
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+// ───────── การเชื่อมต่อ ─────────
+
+function cfg() {
+  return { url: localStorage.getItem(LS.url), token: localStorage.getItem(LS.token) };
+}
+
+async function callApi(action, extra) {
+  const c = cfg();
+  const q = new URLSearchParams(Object.assign({ action, token: c.token }, extra || {}));
+  const res = await fetch(c.url + '?' + q.toString(), { method: 'GET' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const j = await res.json();
+  if (!j.ok && j.error) throw new Error(j.error);
+  return j;
+}
+
+$('#btn-connect').onclick = async () => {
+  const url = $('#in-url').value.trim();
+  const token = $('#in-token').value.trim();
+  const msg = $('#setup-msg');
+  if (!url || !token) { msg.textContent = 'กรอกให้ครบทั้งสองช่อง'; msg.className = 'small err'; return; }
+  msg.textContent = 'กำลังทดสอบ...'; msg.className = 'small muted';
+  localStorage.setItem(LS.url, url);
+  localStorage.setItem(LS.token, token);
+  try {
+    await callApi('state');
+    location.reload();
+  } catch (e) {
+    msg.textContent = 'เชื่อมต่อไม่ได้: ' + e.message; msg.className = 'small err';
+  }
+};
+
+$('#btn-sync').onclick = () => refresh('sync');
+
+async function refresh(action) {
+  const st = $('#status');
+  st.textContent = action === 'sync' ? 'กำลังซิงก์…' : 'กำลังโหลด…';
+  // ไม่ล้างหน้าจอตอนโหลดใหม่ — หรี่ของเดิมไว้ ไม่ให้เลย์เอาต์กระโดด
+  $('main').classList.add('stale');
+  try {
+    const j = await callApi(action || 'state');
+    STATE = j.data;
+    render();
+    st.textContent = j.stat
+      ? 'ซิงก์แล้ว · ' + j.stat.pulled + ' รายการ'
+      : '';
+  } catch (e) {
+    st.textContent = 'ผิดพลาด: ' + e.message;
+    st.className = 'small err';
+  } finally {
+    $('main').classList.remove('stale');
+  }
+}
+
+// ───────── ตัวช่วย ─────────
+
+const toDate = v => { if (!v) return null; const d = new Date(v); return isNaN(d) ? null : d; };
+const dayKey = d => d.toISOString().slice(0, 10);
+const startOfDay = d => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+function skillLabels() {
+  const m = { unsorted: 'ยังไม่จัดหมวด' };
+  ((STATE && STATE.graph && STATE.graph.nodes) || []).forEach(n => {
+    if ((n.type === 'skill' || n.type === 'hub') && n.skillId) m[n.skillId] = n.label;
+  });
+  return m;
+}
+
+const priColor = p => 'var(--pri-' + (({5:5,3:3,1:1}[Number(p)]) || 0) + ')';
+const xpOf = q => XP_BY_PRIORITY[String(Number(q.priority) || 0)] || 5;
+
+// ───────── มุมมอง ─────────
+
+$$('.chip[data-view]').forEach(b => b.onclick = () => {
+  view = b.dataset.view;
+  $$('.chip[data-view]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  $('#v-gantt').classList.toggle('hidden', view !== 'gantt');
+  $('#v-map').classList.toggle('hidden', view !== 'map');
+  $('#v-table').classList.toggle('hidden', view !== 'table');
+  render();
+});
+
+$$('.chip[data-range]').forEach(b => b.onclick = () => {
+  rangeDays = Number(b.dataset.range);
+  $$('.chip[data-range]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  render();
+});
+
+function render() {
+  if (!STATE) return;
+  const p = STATE.player || { xp: 0, level: 0 };
+  $('#lvl').textContent = p.level;
+  const floorXp = 50 * p.level * (p.level + 1);
+  const ceilXp = 50 * (p.level + 1) * (p.level + 2);
+  const pct = Math.max(0, Math.min(100, (p.xp - floorXp) / (ceilXp - floorXp) * 100));
+  $('#xp-fill').style.width = pct + '%';
+  $('#xp-line').textContent = p.xp + ' XP · อีก ' + Math.max(0, ceilXp - p.xp) + ' ถึงเลเวล ' + (p.level + 1);
+
+  if (view === 'gantt') renderGantt();
+  else if (view === 'map') renderMap();
+  else renderTable();
+}
+
+// ───────── ไทม์ไลน์ ─────────
+
+function renderGantt() {
+  const host = $('#gantt-body');
+  const labels = skillLabels();
+  const t0 = startOfDay(new Date());
+  const days = Array.from({ length: rangeDays }, (_, i) => addDays(t0, i));
+  const tEnd = addDays(t0, rangeDays);
+  const cols = '190px repeat(' + rangeDays + ', minmax(26px, 1fr))';
+
+  const rows = (STATE.quests || []).filter(q => {
+    const s = toDate(q.startDate), d = toDate(q.dueDate);
+    if (!s && !d) return false;
+    const a = s || d, b = d || s;
+    return b >= t0 && a < tEnd;
+  });
+
+  let html = '';
+
+  // แถวหัววันที่
+  html += '<div class="gseg" style="grid-template-columns:' + cols + '">';
+  html += '<div></div>';
+  days.forEach(d => {
+    const wk = d.getDay() === 0 || d.getDay() === 6;
+    html += '<div class="gday' + (wk ? ' wk' : '') + '">' + d.getDate() + '</div>';
+  });
+  html += '</div>';
+
+  // จัดกลุ่มตามทักษะ — ใช้หัวข้อข้อความแทนการใช้สีแยก 7 ทักษะ
+  const groups = {};
+  rows.filter(q => q.entityClass === 'quest').forEach(q => {
+    (groups[q.skillId || 'unsorted'] = groups[q.skillId || 'unsorted'] || []).push(q);
+  });
+
+  // เรียงตามลำดับ column จริงที่มาจาก graph ไม่ใช่เรียงตามตัวอักษรของ skillId
+  const order = ((STATE.graph && STATE.graph.nodes) || [])
+    .filter(n => n.type === 'skill' || n.type === 'hub').map(n => n.skillId);
+  const rank = s => { const i = order.indexOf(s); return i < 0 ? 999 : i; };
+
+  Object.keys(groups).sort((a, b) => rank(a) - rank(b)).forEach(sk => {
+    html += '<div class="ghead">' + esc(labels[sk] || sk) + '</div>';
+    groups[sk]
+      .sort((a, b) => (toDate(a.dueDate) || 0) - (toDate(b.dueDate) || 0))
+      .forEach(q => { html += ganttRow(q, t0, cols, false); });
+  });
+
+  const events = rows.filter(q => q.entityClass === 'event');
+  if (events.length) {
+    html += '<div class="ghead">ตารางเวร · ' + events.length + ' รายการ (ไม่ได้ XP)</div>';
+    events.sort((a, b) => (toDate(a.startDate) || 0) - (toDate(b.startDate) || 0))
+      .forEach(q => { html += ganttRow(q, t0, cols, true); });
+  }
+
+  host.innerHTML = html || '<p class="muted small">ไม่มีงานในช่วงนี้</p>';
+  host.querySelectorAll('.gbar').forEach(bindTip);
+}
+
+function ganttRow(q, t0, cols, isEvent) {
+  const s = toDate(q.startDate) || toDate(q.dueDate);
+  const d = toDate(q.dueDate) || s;
+  let a = Math.floor((startOfDay(s) - t0) / 86400000);
+  let b = Math.floor((startOfDay(d) - t0) / 86400000);
+  a = Math.max(0, a); b = Math.min(rangeDays - 1, Math.max(b, a));
+  const left = (a / rangeDays * 100), width = ((b - a + 1) / rangeDays * 100);
+
+  const done = Number(q.itemDoneCount) || 0, total = Number(q.itemCount) || 0;
+  const sub = total ? ' (' + done + '/' + total + ')' : '';
+
+  let cells = '';
+  for (let i = 0; i < rangeDays; i++) {
+    const isToday = i === 0;
+    cells += '<div class="gcell' + (isToday ? ' today' : '') + '"></div>';
+  }
+
+  const tip = esc(q.title) + ' · ' + PRI_LABEL[Number(q.priority) || 0] +
+    (isEvent ? '' : ' · ' + xpOf(q) + ' XP') +
+    (d ? ' · ถึง ' + dayKey(d) : '');
+
+  return '<div class="gseg" style="grid-template-columns:' + cols + '">' +
+    '<div class="glabel" title="' + esc(q.title) + '">' + esc(q.title) + sub + '</div>' +
+    '<div style="grid-column:2/-1;position:relative">' +
+      '<div class="gseg" style="grid-template-columns:repeat(' + rangeDays + ',1fr);position:absolute;inset:0">' + cells + '</div>' +
+      '<div class="gtrack">' +
+        '<div class="gbar' + (isEvent ? ' event' : '') + '" data-tip="' + tip + '" ' +
+          'style="left:' + left + '%;width:' + width + '%;background:' + (isEvent ? '' : priColor(q.priority)) + '">' +
+          (width > 12 ? esc(q.title) : '') +
+        '</div>' +
+      '</div>' +
+    '</div></div>';
+}
+
+// ───────── ผังความคิด ─────────
+
+let mapT = { x: 0, y: 0, k: 1 };
+
+function renderMap() {
+  const svg = $('#map');
+  const g = (STATE.graph) || { nodes: [], edges: [] };
+  const byId = {}; g.nodes.forEach(n => byId[n.id] = n);
+
+  const W = svg.clientWidth || 800, H = 520;
+  const cx = W / 2, cy = H / 2;
+  const pos = {};
+
+  const project = g.nodes.find(n => n.type === 'project');
+  if (project) pos[project.id] = { x: cx, y: cy };
+
+  const containers = g.nodes.filter(n => n.type === 'skill' || n.type === 'hub');
+  const R1 = Math.min(W, H) * 0.26;
+  containers.forEach((n, i) => {
+    const a = (i / containers.length) * Math.PI * 2 - Math.PI / 2;
+    pos[n.id] = { x: cx + Math.cos(a) * R1, y: cy + Math.sin(a) * R1, a };
+  });
+
+  // เควสกระจายเป็นพัดรอบทักษะของตัวเอง
+  const childOf = {};
+  g.edges.filter(e => e.type === 'contains' && byId[e.from] && byId[e.from].type !== 'project')
+    .forEach(e => (childOf[e.from] = childOf[e.from] || []).push(e.to));
+
+  Object.keys(childOf).forEach(pid => {
+    const p = pos[pid]; if (!p) return;
+    const kids = childOf[pid];
+    const spread = Math.PI * 0.62;
+    kids.forEach((kid, i) => {
+      const off = kids.length === 1 ? 0 : (i / (kids.length - 1) - 0.5) * spread;
+      const a = (p.a || 0) + off;
+      const r = Math.min(W, H) * 0.155;
+      pos[kid] = { x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r, a };
+    });
+  });
+
+  // ขั้นย่อยเป็นจุดเล็กรอบเควส
+  g.edges.filter(e => e.type === 'substep').forEach(e => {
+    const p = pos[e.from]; if (!p) return;
+    const sibs = g.edges.filter(x => x.type === 'substep' && x.from === e.from);
+    const i = sibs.findIndex(x => x.to === e.to);
+    const a = (p.a || 0) + (i / Math.max(1, sibs.length)) * Math.PI * 1.5 - Math.PI * 0.4;
+    pos[e.to] = { x: p.x + Math.cos(a) * 34, y: p.y + Math.sin(a) * 34 };
+  });
+
+  // แท็กอยู่วงนอกสุด
+  const tags = g.nodes.filter(n => n.type === 'tag');
+  const R3 = Math.min(W, H) * 0.46;
+  tags.forEach((n, i) => {
+    const a = (i / Math.max(1, tags.length)) * Math.PI * 2 + Math.PI / 5;
+    pos[n.id] = { x: cx + Math.cos(a) * R3, y: cy + Math.sin(a) * R3 };
+  });
+
+  let edges = '', nodes = '';
+  g.edges.forEach(e => {
+    const A = pos[e.from], B = pos[e.to];
+    if (!A || !B) return;
+    const dashed = e.type === 'tagged';
+    edges += '<line x1="' + A.x + '" y1="' + A.y + '" x2="' + B.x + '" y2="' + B.y +
+      '" stroke="' + (dashed ? 'var(--cat-3)' : 'var(--axis)') + '" stroke-width="' + (dashed ? 1.5 : 2) +
+      '"' + (dashed ? ' stroke-dasharray="4 4" opacity=".75"' : ' opacity=".55"') + ' />';
+  });
+
+  g.nodes.forEach(n => {
+    const p = pos[n.id]; if (!p) return;
+    let r = 6, fill = 'var(--ink-muted)', label = '', weight = 400, size = 11;
+    if (n.type === 'project') { r = 13; fill = 'var(--ink-1)'; label = n.label; weight = 600; size = 13; }
+    else if (n.type === 'hub' || n.type === 'skill') { r = 10; fill = 'var(--cat-1)'; label = n.label; weight = 500; size = 12; }
+    else if (n.type === 'quest') { r = 7; fill = 'var(--cat-2)'; label = n.label; }
+    else if (n.type === 'tag') { r = 7; fill = 'var(--cat-3)'; label = n.label; }
+    else if (n.type === 'step') { r = 3.5; fill = 'var(--ink-muted)'; }
+
+    const done = n.status === 2;
+    nodes += '<g class="mnode" data-tip="' + esc(n.label || '') +
+      (n.xpValue ? ' · ' + n.xpValue + ' XP' : '') + '">' +
+      // วงแหวนสีพื้นหลัง 2px กันจุดที่ทับกันกลืนกัน
+      '<circle cx="' + p.x + '" cy="' + p.y + '" r="' + (r + 2) + '" fill="var(--surface-1)"/>' +
+      '<circle cx="' + p.x + '" cy="' + p.y + '" r="' + r + '" fill="' + fill + '"' +
+        (done ? ' opacity=".4"' : '') + '/>' +
+      // node ที่อยู่ซีกขวาให้ป้ายชื่อพลิกไปทางซ้าย ไม่งั้นข้อความล้นออกนอกกรอบ
+      (label ? (function () {
+        const rightSide = p.x > cx;
+        const tx = rightSide ? (p.x - r - 5) : (p.x + r + 5);
+        const anchor = rightSide ? 'end' : 'start';
+        const txt = label.length > 22 ? label.slice(0, 21) + '…' : label;
+        return '<text x="' + tx + '" y="' + (p.y + 4) + '" text-anchor="' + anchor +
+          '" font-size="' + size + '" font-weight="' + weight +
+          '" fill="var(--ink-1)">' + esc(txt) + '</text>';
+      })() : '') +
+      '</g>';
+  });
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.innerHTML = '<g id="mapg" transform="translate(' + mapT.x + ',' + mapT.y + ') scale(' + mapT.k + ')">' +
+    edges + nodes + '</g>';
+  svg.querySelectorAll('.mnode').forEach(bindTip);
+  bindPanZoom(svg);
+}
+
+function bindPanZoom(svg) {
+  let dragging = false, sx = 0, sy = 0;
+  svg.onpointerdown = e => { dragging = true; sx = e.clientX - mapT.x; sy = e.clientY - mapT.y; svg.setPointerCapture(e.pointerId); };
+  svg.onpointermove = e => {
+    if (!dragging) return;
+    mapT.x = e.clientX - sx; mapT.y = e.clientY - sy;
+    const gg = svg.querySelector('#mapg');
+    if (gg) gg.setAttribute('transform', 'translate(' + mapT.x + ',' + mapT.y + ') scale(' + mapT.k + ')');
+  };
+  svg.onpointerup = svg.onpointercancel = () => { dragging = false; };
+  svg.onwheel = e => {
+    e.preventDefault();
+    mapT.k = Math.max(0.4, Math.min(3, mapT.k * (e.deltaY < 0 ? 1.1 : 0.9)));
+    const gg = svg.querySelector('#mapg');
+    if (gg) gg.setAttribute('transform', 'translate(' + mapT.x + ',' + mapT.y + ') scale(' + mapT.k + ')');
+  };
+}
+
+// ───────── ตาราง ─────────
+
+function renderTable() {
+  const labels = skillLabels();
+  const tb = $('#tbl').querySelector('tbody');
+  const rows = (STATE.quests || [])
+    .filter(q => q.entityClass === 'quest')
+    .sort((a, b) => (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15));
+
+  tb.innerHTML = rows.map(q => {
+    const d = toDate(q.dueDate);
+    const total = Number(q.itemCount) || 0, done = Number(q.itemDoneCount) || 0;
+    return '<tr>' +
+      '<td>' + esc(q.title) + (q.paused === true || q.paused === 'TRUE' ? ' <span class="muted small">· พักไว้</span>' : '') + '</td>' +
+      '<td class="sec">' + esc(labels[q.skillId] || q.skillId || '—') + '</td>' +
+      '<td class="sec">' + PRI_LABEL[Number(q.priority) || 0] + '</td>' +
+      '<td class="num sec">' + (d ? dayKey(d) : '—') + '</td>' +
+      '<td class="num sec">' + (total ? done + '/' + total : '—') + '</td>' +
+      '<td class="num">' + xpOf(q) + '</td>' +
+      '<td><button data-done="' + esc(q.taskId) + '">เสร็จ</button></td>' +
+      '</tr>';
+  }).join('') || '<tr><td colspan="7" class="muted">ไม่มีงาน</td></tr>';
+
+  tb.querySelectorAll('button[data-done]').forEach(b => b.onclick = async () => {
+    b.disabled = true; b.textContent = '…';
+    try {
+      const j = await callApi('complete', { taskId: b.dataset.done });
+      STATE = j.data; render();
+    } catch (e) {
+      b.disabled = false; b.textContent = 'เสร็จ';
+      $('#status').textContent = 'ผิดพลาด: ' + e.message;
+    }
+  });
+}
+
+// ───────── tooltip (เสริมเท่านั้น — ค่าทุกตัวอ่านได้จากแท็บตาราง) ─────────
+
+function bindTip(el) {
+  const tip = $('#tip');
+  const show = e => {
+    tip.textContent = el.dataset.tip || '';
+    tip.style.opacity = '1';
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    const y = (e.touches ? e.touches[0].clientY : e.clientY);
+    tip.style.left = Math.min(window.innerWidth - 270, x + 12) + 'px';
+    tip.style.top = (y - 40) + 'px';
+  };
+  el.addEventListener('mouseenter', show);
+  el.addEventListener('mousemove', show);
+  el.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+}
+
+// ───────── เริ่มทำงาน ─────────
+
+if (!cfg().url || !cfg().token) {
+  $('#setup').classList.remove('hidden');
+} else {
+  $('#app').classList.remove('hidden');
+  refresh('state');
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/**
+ * ช่องทางตรวจสอบจากคอนโซล — ใส่ข้อมูลจำลองแล้ววาดใหม่ได้โดยไม่ต้องต่อ API
+ * ใช้ตอนพัฒนา UI และตอนไล่ปัญหาหน้าจอเพี้ยนบนมือถือ
+ * เป็นตัวอ่าน/เขียนสถานะที่มีอยู่แล้ว ไม่ได้เปิดอะไรที่ API ไม่ให้อยู่แล้ว
+ */
+window.TG = {
+  get state() { return STATE; },
+  set state(v) { STATE = v; },
+  render, refresh, callApi
+};
+</script>
+</body>
+</html>
