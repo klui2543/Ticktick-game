@@ -470,6 +470,14 @@ const xpOf = q => XP_BY_PRIORITY[String(Number(q.priority) || 0)] || 5;
 const levelFromXp = xp => { if (!xp || xp < 0) return 0; const L = Math.floor((-1 + Math.sqrt(1 + xp / 12.5)) / 2); return L < 0 ? 0 : L; };
 const quests = () => (STATE.quests || []).filter(q => q.entityClass === 'quest');
 
+/**
+ * ลำดับมาตรฐานของทุกรายการในแอป: ความสำคัญจาก TickTick มาก่อน แล้วค่อยวันครบกำหนด
+ * เดิมเรียงตามวันอย่างเดียว ทำให้งานสำคัญมากตกไปอยู่ล่างสุดถ้ากำหนดส่งไกล
+ */
+const byPriorityThenDue = (a, b) =>
+  (Number(b.priority) || 0) - (Number(a.priority) || 0) ||
+  (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15);
+
 // ───────── toast ─────────
 
 function toast(msg, isErr) {
@@ -594,14 +602,14 @@ function renderToday() {
     else if (d < week) soon.push(q);
   });
 
+  // เลยกำหนดเรียงตามวันที่ค้างนานสุดก่อน ที่เหลือเรียงตามความสำคัญของ TickTick
   const byDue = (a, b) => (toDate(a.dueDate) || 0) - (toDate(b.dueDate) || 0);
-  const byPri = (a, b) => Number(b.priority) - Number(a.priority);
 
   const sections = [
     { t: 'เลยกำหนด', cls: 'over', items: overdue.sort(byDue) },
-    { t: 'วันนี้', cls: '', items: today.sort(byPri) },
-    { t: '7 วันข้างหน้า', cls: '', items: soon.sort(byDue) },
-    { t: 'ไม่มีกำหนด', cls: '', items: someday.sort(byPri) }
+    { t: 'วันนี้', cls: '', items: today.sort(byPriorityThenDue) },
+    { t: '7 วันข้างหน้า', cls: '', items: soon.sort(byPriorityThenDue) },
+    { t: 'ไม่มีกำหนด', cls: '', items: someday.sort(byPriorityThenDue) }
   ].filter(s => s.items.length);
 
   if (!sections.length) {
@@ -641,16 +649,17 @@ function renderMatrix() {
   quests().forEach(q => buckets[quadrantOf(q)].push(q));
 
   host.innerHTML = QUADS.map(qd => {
-    const items = buckets[qd.key].sort((a, b) => (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15));
+    const items = buckets[qd.key].sort(byPriorityThenDue);
     return '<div class="equad" data-quad="' + qd.key + '">' +
       '<h3>' + qd.title + '<span class="n">' + items.length + '</span></h3>' +
       '<p class="small muted hint">' + qd.hint + '</p>' +
       (items.length ? items.map(q =>
         '<div class="eitem' + (overrides[q.taskId] ? ' moved' : '') + '" data-id="' + esc(q.taskId) + '">' +
         '<span class="egrip" data-grip="' + esc(q.taskId) + '" aria-label="ลากเพื่อย้าย">⠿</span>' +
-        '<span class="tree-dot" style="background:' + priColor(q.priority) + '"></span>' +
+        '<span class="tree-dot" title="' + PRI_LABEL[Number(q.priority) || 0] + '" style="background:' + priColor(q.priority) + '"></span>' +
         '<span class="t">' + esc(q.title) + '</span>' +
-        '<span class="muted small">' + (q.dueDate ? bkkNice(q.dueDate) : '') + '</span>' +
+        '<span class="muted small">' + esc(PRI_LABEL[Number(q.priority) || 0]) +
+          (q.dueDate ? ' · ' + bkkNice(q.dueDate) : '') + '</span>' +
         '<button class="tree-check" data-done="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button></div>'
       ).join('') : '<p class="muted small">ไม่มีงาน</p>') +
       '</div>';
@@ -890,7 +899,7 @@ function renderTable() {
   let rows = quests();
   if (tableSearch) rows = rows.filter(q => q.title.toLowerCase().includes(tableSearch));
   if (tableSkillFilter) rows = rows.filter(q => (q.skillId || 'unsorted') === tableSkillFilter);
-  rows = rows.sort((a, b) => (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15));
+  rows = rows.sort(byPriorityThenDue);
 
   const tb = $('#tbl').querySelector('tbody');
   tb.innerHTML = rows.map(q => {
