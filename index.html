@@ -308,7 +308,8 @@ td.num { font-variant-numeric: tabular-nums; }
     <section id="v-matrix" class="card hidden">
       <h2>จัดลำดับความสำคัญ</h2>
       <p class="small muted" style="margin:0 0 10px">
-        ลากที่หูจับ <span style="color:var(--ink-2)">⠿</span> เพื่อย้ายช่องเอง — ที่ย้ายเองจะถูกจำไว้ ไม่ถูกคำนวณทับ
+        ลากที่หูจับ <span style="color:var(--ink-2)">⠿</span> เพื่อย้ายช่องเอง · ลากกลับช่องเดิมเพื่อยกเลิก<br>
+        ยึดตาม TickTick เป็นหลัก — <b>ถ้าไปแก้ความสำคัญใน TickTick การย้ายที่เคยลากไว้จะถูกล้าง</b>
       </p>
       <div class="eisen" id="eisen"></div>
       <p class="small muted" style="margin:10px 0 0">
@@ -726,15 +727,22 @@ function bindDrag(grip) {
 }
 
 async function setQuadrant(taskId, quadrant) {
+  const q = quests().find(x => x.taskId === taskId);
   const prev = Object.assign({}, STATE.overrides || {});
-  STATE = Object.assign({}, STATE, {
-    overrides: Object.assign({}, prev, { [taskId]: quadrant })
-  });
+  const next = Object.assign({}, prev);
+
+  // ลากกลับไปช่องที่ระบบเดาไว้เอง = ยกเลิกการปรับ กลับไปยึด TickTick ล้วน ๆ
+  const backToAuto = q && autoQuadrant(q) === quadrant;
+  if (backToAuto) delete next[taskId]; else next[taskId] = quadrant;
+
+  STATE = Object.assign({}, STATE, { overrides: next });
   renderMatrix();
-  const label = (QUADS.find(q => q.key === quadrant) || {}).title || quadrant;
-  toast('ย้ายไป “' + label + '”');
+
+  const label = (QUADS.find(x => x.key === quadrant) || {}).title || quadrant;
+  toast(backToAuto ? 'กลับไปใช้ค่าจาก TickTick' : 'ย้ายไป “' + label + '”');
+
   try {
-    await callApi('setQuadrant', { taskId, quadrant });
+    await callApi('setQuadrant', { taskId, quadrant: backToAuto ? '' : quadrant });
   } catch (e) {
     STATE = Object.assign({}, STATE, { overrides: prev });
     renderMatrix();
