@@ -308,14 +308,35 @@ td.num { font-variant-numeric: tabular-nums; }
         <div class="row">
           <span id="status" class="small muted"></span>
           <button id="btn-sync">ซิงก์</button>
-          <button id="btn-logout" title="ออกจากระบบ" aria-label="ออกจากระบบ"
-                  style="padding:8px 10px">⏻</button>
+          <button id="btn-settings" title="ตั้งค่า" aria-label="ตั้งค่า"
+                  aria-expanded="false" style="padding:8px 10px">⚙</button>
         </div>
       </div>
     </div>
   </header>
 
   <main class="wrap">
+    <section id="settings" class="card hidden" style="margin-bottom:12px">
+      <h2>ตั้งค่า</h2>
+      <form id="pw-form" style="display:grid;gap:10px;max-width:340px">
+        <label class="small sec">รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)
+          <input id="pw-new" type="password" autocomplete="new-password" placeholder="••••••••">
+        </label>
+        <label class="small sec">พิมพ์ซ้ำอีกครั้ง
+          <input id="pw-new2" type="password" autocomplete="new-password" placeholder="••••••••">
+        </label>
+        <div class="row">
+          <button class="primary" type="submit">บันทึกรหัสผ่าน</button>
+          <span id="pw-msg" class="small"></span>
+        </div>
+      </form>
+      <p class="small muted" style="margin:12px 0 0">
+        ใส่รหัสผิดเกิน 8 ครั้งจะถูกล็อก 15 นาที
+      </p>
+      <hr style="border:none;border-top:1px solid var(--grid);margin:14px 0">
+      <button id="btn-logout">ออกจากระบบ</button>
+    </section>
+
     <div class="filters" role="group" aria-label="มุมมอง">
       <button class="chip" data-view="today" aria-pressed="true">วันนี้</button>
       <button class="chip" data-view="matrix" aria-pressed="false">จัดลำดับ</button>
@@ -355,6 +376,7 @@ td.num { font-variant-numeric: tabular-nums; }
         </label>
         <label class="fctl">เรียงตาม
           <select id="f-sort">
+            <option value="ticktick">ลำดับใน TickTick</option>
             <option value="priority">ความสำคัญ</option>
             <option value="due">วันครบกำหนด</option>
             <option value="xp">XP</option>
@@ -445,7 +467,7 @@ let treeOpen = new Set();
 let toastTimer = null;
 
 /** ตัวกรองชุดเดียวใช้ร่วมกันทุกมุมมอง — เปลี่ยนที่เดียว มีผลทั้งแอป */
-const FILTER_DEFAULT = { search: '', range: 'all', minPri: -1, skill: '', sort: 'priority' };
+const FILTER_DEFAULT = { search: '', range: 'all', minPri: -1, skill: '', sort: 'ticktick' };
 let filters = Object.assign({}, FILTER_DEFAULT);
 
 const $ = s => document.querySelector(s);
@@ -502,7 +524,30 @@ function logout() {
 }
 
 $('#btn-sync').onclick = () => refresh('sync');
+$('#btn-settings').onclick = function () {
+  const open = $('#settings').classList.toggle('hidden') === false;
+  this.setAttribute('aria-expanded', String(open));
+};
 $('#btn-logout').onclick = () => { if (confirm('ออกจากระบบ?')) logout(); };
+
+$('#pw-form').onsubmit = async e => {
+  e.preventDefault();
+  const a = $('#pw-new').value, b = $('#pw-new2').value;
+  const msg = $('#pw-msg');
+  if (a !== b) { msg.textContent = 'สองช่องไม่ตรงกัน'; msg.className = 'small err'; return; }
+  if (a.length < 8) { msg.textContent = 'ต้องยาวอย่างน้อย 8 ตัว'; msg.className = 'small err'; return; }
+  msg.textContent = 'กำลังบันทึก…'; msg.className = 'small muted';
+  try {
+    await callApi('setPassword', { 'new': a });
+    // รหัสเปลี่ยนแล้ว token เดิมใช้ไม่ได้ ต้องเก็บอันใหม่ทันทีไม่งั้นคำขอถัดไปจะถูกปฏิเสธ
+    localStorage.setItem(LS.token, a);
+    $('#pw-new').value = ''; $('#pw-new2').value = '';
+    msg.textContent = 'เปลี่ยนแล้ว'; msg.className = 'small';
+    toast('เปลี่ยนรหัสผ่านแล้ว');
+  } catch (e2) {
+    msg.textContent = 'ไม่สำเร็จ: ' + e2.message; msg.className = 'small err';
+  }
+};
 
 async function refresh(action) {
   const st = $('#status');
@@ -569,6 +614,12 @@ const byPriorityThenDue = (a, b) =>
   (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15);
 
 const SORTS = {
+  // ลำดับที่ลากจัดเองใน TickTick — ค่าน้อย (ติดลบมาก) อยู่บน
+  // เป็นลำดับต่อ column จึงตรงกับที่เห็นในแอป TickTick ที่สุดเมื่อดูแยกตามทักษะ
+  // ค่าซ้ำกันได้ (TickTick ไม่ได้ไล่เลขใหม่ทุกครั้ง) จึงมีตัวตัดสินสำรองต่อท้าย
+  ticktick: (a, b) => ((Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)) ||
+                      byPriorityThenDue(a, b) ||
+                      String(a.taskId).localeCompare(String(b.taskId)),
   priority: byPriorityThenDue,
   due: (a, b) => ((toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15)) ||
                  ((Number(b.priority) || 0) - (Number(a.priority) || 0)),
@@ -694,7 +745,7 @@ function activeFilterCount() {
   if (filters.range !== 'all') n++;
   if (filters.minPri >= 0) n++;
   if (filters.skill) n++;
-  if (filters.sort !== 'priority') n++;
+  if (filters.sort !== FILTER_DEFAULT.sort) n++;
   return n;
 }
 
