@@ -6,7 +6,7 @@
  * และ response ของ Apps Script มี token อยู่ใน URL ไม่ควรค้างในแคช
  */
 
-const CACHE = 'taskgame-v1';
+const CACHE = 'taskgame-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {

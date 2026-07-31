@@ -252,6 +252,42 @@ td.num { font-variant-numeric: tabular-nums; }
 .err { color: var(--crit); }
 .empty { text-align: center; padding: 26px 10px; color: var(--ink-muted); font-size: 14px; }
 
+/* ── มิติบริบท: พลังงาน / สถานที่ / ระยะเวลา ──
+   ใช้ไอคอน + ตัวอักษรเท่านั้น ไม่แจกสีเพิ่ม
+   สีสงวนไว้ให้ "ความสำคัญ" อย่างเดียวเหมือนเดิม เพราะพาเลตต์นี้มีสีหมวดหมู่
+   ที่แยกออกจริงตอนตาบอดสีแค่ 3 ช่อง เติมอีก 3 มิติเป็นสีแล้วอ่านไม่ออกทั้งหมด */
+.mchips { display: inline-flex; gap: 5px; flex-wrap: wrap; vertical-align: middle; }
+.mchip {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 11.5px; line-height: 1.55; color: var(--ink-2);
+  border: 1px solid var(--grid); border-radius: 999px; padding: 0 7px;
+  white-space: nowrap;
+}
+/* พลังงานสูง = ต้นทุนแพงที่สุดในวัน จึงเป็นตัวเดียวที่เน้นน้ำหนักตัวอักษร */
+.mchip.hi { border-color: var(--axis); color: var(--ink-1); font-weight: 500; }
+.nextstep b { font-weight: 500; color: var(--ink-2); }
+
+/* ── โหมดฉุกเฉิน ── */
+#btn-sos[aria-pressed="true"] { background: var(--crit); border-color: transparent; color: #fff; }
+.sosbar {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  border: 1px solid var(--crit); border-radius: 12px; padding: 10px 12px;
+  margin-bottom: 12px; font-size: 13.5px;
+  background: color-mix(in srgb, var(--crit) 9%, transparent);
+}
+.sosbar b { color: var(--crit); font-weight: 600; }
+/* ตัวกรองอื่นถูกพักไว้ตอนฉุกเฉิน จึงซ่อนแถบไปเลยกันเข้าใจผิดว่ายังมีผล */
+body.sos .fbar { display: none; }
+
+/* ── จัดกลุ่มงาน ── */
+.bgroup { border: 1px solid var(--hairline); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+/* กลุ่มที่ยังแท็กไม่ครบ = ยังจัดเป็นก้อนไม่ได้จริง ใช้เส้นประบอกว่ายังไม่พร้อม */
+.bgroup.partial { border-style: dashed; }
+.bgroup-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.bgroup-h b { font-size: 14px; font-weight: 600; }
+.bgroup-h .n { color: var(--ink-muted); font-size: 12.5px; }
+.bgroup-note { font-size: 12px; color: var(--ink-muted); margin: 0 0 4px; }
+
 @media (max-width: 480px) {
   .wrap { padding: 12px; }
   .card { padding: 12px; border-radius: 12px; }
@@ -260,8 +296,9 @@ td.num { font-variant-numeric: tabular-nums; }
   .gday { font-size: 10px; }
   .filters { margin: 10px 0; gap: 6px; }
   .chip { padding: 6px 11px; font-size: 13px; min-height: 36px; }
+  /* ซ่อนทักษะกับขั้นย่อยบนจอแคบ — คอลัมน์ "บริบท" อยู่ต่อ เพราะเป็นตัวคัดกรองหลัก */
   #tbl th:nth-child(2), #tbl td:nth-child(2),
-  #tbl th:nth-child(5), #tbl td:nth-child(5) { display: none; }
+  #tbl th:nth-child(6), #tbl td:nth-child(6) { display: none; }
 }
 </style>
 </head>
@@ -307,6 +344,8 @@ td.num { font-variant-numeric: tabular-nums; }
         </div>
         <div class="row">
           <span id="status" class="small muted"></span>
+          <button id="btn-sos" aria-pressed="false" title="โหมดฉุกเฉิน"
+                  style="padding:8px 12px">🚨</button>
           <button id="btn-sync">ซิงก์</button>
           <button id="btn-settings" title="ตั้งค่า" aria-label="ตั้งค่า"
                   aria-expanded="false" style="padding:8px 10px">⚙</button>
@@ -334,15 +373,39 @@ td.num { font-variant-numeric: tabular-nums; }
         ใส่รหัสผิดเกิน 8 ครั้งจะถูกล็อก 15 นาที
       </p>
       <hr style="border:none;border-top:1px solid var(--grid);margin:14px 0">
+      <h2>แท็กสำหรับพลังงาน / สถานที่ / เวลา</h2>
+      <p class="small sec" style="margin:0 0 6px">
+        สามมิตินี้อ่านจาก<b>แท็กใน TickTick</b> ไม่ได้เก็บแยกไว้ในแอป —
+        ติดแท็กในงานเอง แล้วกดซิงก์ ค่าจะขึ้นเองทุกมุมมอง
+      </p>
+      <table class="small" style="margin-bottom:6px">
+        <tbody>
+          <tr><td><code>⚡สูง</code> <code>⚡กลาง</code> <code>⚡ต่ำ</code></td><td class="sec">ระดับพลังงานที่ต้องใช้</td></tr>
+          <tr><td><code>📍บ้าน</code> <code>📍ศิริราช</code></td><td class="sec">สถานที่ — ตั้งชื่ออะไรก็ได้หลัง 📍</td></tr>
+          <tr><td><code>⏱15</code> <code>⏱30</code> <code>⏱90</code></td><td class="sec">เวลาที่คาดว่าจะใช้ (นาที)</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted" style="margin:0 0 14px">
+        แท็กเดิมที่มีอยู่แล้วนับให้อัตโนมัติ: <code>🎯 ต้องต่อเนื่อง</code> = พลังงานสูง ·
+        <code>🔄 แทรกได้</code> = พลังงานต่ำ (ถ้าติด ⚡ เองด้วย ค่าที่ติดเองชนะ)
+      </p>
       <button id="btn-logout">ออกจากระบบ</button>
     </section>
 
     <div class="filters" role="group" aria-label="มุมมอง">
       <button class="chip" data-view="today" aria-pressed="true">วันนี้</button>
       <button class="chip" data-view="matrix" aria-pressed="false">จัดลำดับ</button>
+      <button class="chip" data-view="batch" aria-pressed="false">จัดกลุ่ม</button>
       <button class="chip" data-view="gantt" aria-pressed="false">ไทม์ไลน์</button>
       <button class="chip" data-view="map" aria-pressed="false">ผังความคิด</button>
       <button class="chip" data-view="table" aria-pressed="false">ทั้งหมด</button>
+    </div>
+
+    <!-- โหมดฉุกเฉิน: พักตัวกรองทุกตัว เหลือเฉพาะงานที่รอไม่ได้ -->
+    <div class="sosbar hidden" id="sosbar">
+      <b>🚨 โหมดฉุกเฉิน</b>
+      <span class="sec" id="sos-count"></span>
+      <span class="muted small">เลยกำหนด · ครบวันนี้ · สำคัญมาก — ตัวกรองอื่นถูกพักไว้</span>
     </div>
 
     <!-- แถบกรองเดียวคุมทุกมุมมอง — ไม่แยกตัวกรองไว้ในแต่ละการ์ด -->
@@ -374,6 +437,26 @@ td.num { font-variant-numeric: tabular-nums; }
         <label class="fctl">ทักษะ
           <select id="f-skill"></select>
         </label>
+        <label class="fctl">พลังงาน
+          <select id="f-energy">
+            <option value="0">ทุกระดับ</option>
+            <option value="3">⚡ สูง</option>
+            <option value="2">⚡ กลาง</option>
+            <option value="1">⚡ ต่ำ</option>
+          </select>
+        </label>
+        <label class="fctl">สถานที่
+          <select id="f-place"></select>
+        </label>
+        <label class="fctl">เวลาที่ใช้
+          <select id="f-time">
+            <option value="0">เท่าไรก็ได้</option>
+            <option value="15">⏱ ไม่เกิน 15 นาที</option>
+            <option value="30">⏱ ไม่เกิน 30 นาที</option>
+            <option value="60">⏱ ไม่เกิน 1 ชั่วโมง</option>
+            <option value="120">⏱ ไม่เกิน 2 ชั่วโมง</option>
+          </select>
+        </label>
         <label class="fctl">เรียงตาม
           <select id="f-sort">
             <option value="ticktick">ลำดับใน TickTick</option>
@@ -403,6 +486,20 @@ td.num { font-variant-numeric: tabular-nums; }
       </p>
     </section>
 
+    <section id="v-batch" class="card hidden">
+      <h2>จัดกลุ่มงาน</h2>
+      <p class="small muted" style="margin:0 0 10px">
+        รวมงานที่ทำต่อกันรวดเดียวได้ไว้ก้อนเดียว — เปิดครั้งเดียว ปิดให้หมด
+      </p>
+      <div class="filters" id="batch-by" role="group" aria-label="จัดกลุ่มตาม">
+        <button class="chip" data-by="place" aria-pressed="true">📍 สถานที่</button>
+        <button class="chip" data-by="energy" aria-pressed="false">⚡ พลังงาน</button>
+        <button class="chip" data-by="time" aria-pressed="false">⏱ ระยะเวลา</button>
+        <button class="chip" data-by="skill" aria-pressed="false">หมวดหมู่</button>
+      </div>
+      <div id="batch-body"></div>
+    </section>
+
     <section id="v-gantt" class="card hidden">
       <div class="legend" style="margin-bottom:10px">
         <span><i style="background:var(--pri-5)"></i>สำคัญมาก</span>
@@ -428,7 +525,7 @@ td.num { font-variant-numeric: tabular-nums; }
       <div style="overflow-x:auto">
         <table id="tbl">
           <thead><tr>
-            <th>งาน</th><th>ทักษะ</th><th>สำคัญ</th><th>กำหนด</th><th>ขั้นย่อย</th><th>XP</th><th></th>
+            <th>งาน</th><th>ทักษะ</th><th>บริบท</th><th>สำคัญ</th><th>กำหนด</th><th>ขั้นย่อย</th><th>XP</th><th></th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -461,13 +558,30 @@ const QUADS = [
   { key: 'later', title: 'ทำทีหลังได้',  hint: 'ไม่ด่วน ไม่ค่อยสำคัญ' }
 ];
 
+const ENERGY_LABEL = { 3: 'พลังงานสูง', 2: 'พลังงานกลาง', 1: 'พลังงานต่ำ' };
+const ENERGY_SHORT = { 3: 'สูง', 2: 'กลาง', 1: 'ต่ำ' };
+
+const TIME_BUCKETS = [
+  { max: 15,       t: '⏱ ไม่เกิน 15 นาที' },
+  { max: 30,       t: '⏱ 16–30 นาที' },
+  { max: 60,       t: '⏱ 31–60 นาที' },
+  { max: Infinity, t: '⏱ เกิน 1 ชั่วโมง' }
+];
+
+const BATCH_BY = ['place', 'energy', 'time', 'skill'];
+
 let STATE = null;
 let view = 'today';
+let batchBy = 'place';
+let emergency = false;
 let treeOpen = new Set();
 let toastTimer = null;
 
 /** ตัวกรองชุดเดียวใช้ร่วมกันทุกมุมมอง — เปลี่ยนที่เดียว มีผลทั้งแอป */
-const FILTER_DEFAULT = { search: '', range: 'all', minPri: -1, skill: '', sort: 'ticktick' };
+const FILTER_DEFAULT = {
+  search: '', range: 'all', minPri: -1, skill: '',
+  energy: 0, place: '', maxMin: 0, sort: 'ticktick'
+};
 let filters = Object.assign({}, FILTER_DEFAULT);
 
 const $ = s => document.querySelector(s);
@@ -598,6 +712,104 @@ function skillLabels() {
   return m;
 }
 
+// ───────── มิติบริบท: พลังงาน / สถานที่ / ระยะเวลา ─────────
+// สามค่านี้ไม่มีในสคีมาของงาน (มีแค่ priority/dueDate/skillId/...) จึงอ่านจากแท็กของ TickTick
+// ที่ backend ส่งมาเป็น edge type 'tagged' ในกราฟอยู่แล้ว — ไม่ต้องแตะฝั่งเซิร์ฟเวอร์เลย
+// แลกกับข้อจำกัดว่าแก้ค่าได้จากในแอป TickTick เท่านั้น ไม่ใช่จากหน้านี้
+
+const EMPTY_META = { energy: 0, place: '', minutes: 0 };
+const ENERGY_WORD = { 'สูง':3, 'กลาง':2, 'ปานกลาง':2, 'ต่ำ':1, 'high':3, 'mid':2, 'medium':2, 'low':1 };
+
+/**
+ * แท็กที่ใช้อยู่แล้วก่อนมีฟีเจอร์นี้ ตีความเป็นระดับพลังงานให้เลย
+ * จะได้ใช้งานได้ตั้งแต่วันแรกโดยไม่ต้องไล่ติดแท็ก ⚡ ใหม่ทั้งหมด
+ * ถ้ามีแท็ก ⚡ ชัด ๆ อยู่ด้วย อันนั้นชนะเสมอ (ดูตัวเงื่อนไขใน taskMeta)
+ */
+const ENERGY_LEGACY = [
+  { re: /ต้องต่อเนื่อง/, energy: 3 },
+  { re: /แทรกได้/,       energy: 1 }
+];
+
+// U+FE0F คือ variation selector ที่ทำให้อีโมจิเป็นภาพสี — ผู้ใช้พิมพ์มามีบ้างไม่มีบ้าง
+// ตัดทิ้งก่อนเทียบทุกครั้ง ไม่งั้น "⏱️30" กับ "⏱30" จะกลายเป็นคนละแท็ก
+const normTag = s => String(s == null ? '' : s).replace(/\uFE0F/g, '').trim();
+
+function parseTag(raw) {
+  const t = normTag(raw);
+  let m = t.match(/^⚡\s*(.+)$/);
+  if (m) { const e = ENERGY_WORD[normTag(m[1]).toLowerCase()]; return e ? { energy: e } : null; }
+  m = t.match(/^📍\s*(.+)$/);
+  if (m) return { place: normTag(m[1]) };
+  m = t.match(/^⏱\s*(\d{1,4})/);
+  if (m) return { minutes: Number(m[1]) };
+  for (let i = 0; i < ENERGY_LEGACY.length; i++) {
+    if (ENERGY_LEGACY[i].re.test(t)) return { energy: ENERGY_LEGACY[i].energy, legacy: true };
+  }
+  return null;
+}
+
+// เดินกราฟทั้งก้อนครั้งเดียวต่อ STATE หนึ่งชุด แล้วจำไว้
+// ทุก renderer เรียก metaOf() ต่อรายการ ถ้าไม่จำจะกลายเป็น O(งาน × เส้นเชื่อม) ทุกครั้งที่วาด
+let _metaFor = null, _metaIdx = null, _stepIdx = null;
+
+function buildIndexes() {
+  if (_metaFor === STATE && _metaIdx) return;
+  const g = (STATE && STATE.graph) || { nodes: [], edges: [] };
+  const byId = {};
+  g.nodes.forEach(n => byId[n.id] = n);
+
+  // เควสในกราฟใช้ id 'q:<taskId>' และเก็บ taskId จริงไว้ที่ srcTaskId
+  const taskIdOf = nodeId => {
+    const n = byId[nodeId];
+    return (n && n.srcTaskId) || String(nodeId).replace(/^q:/, '');
+  };
+
+  const meta = {}, steps = {};
+  g.edges.forEach(e => {
+    if (e.type === 'tagged') {
+      const p = parseTag((byId[e.to] || {}).label);
+      if (!p) return;
+      const id = taskIdOf(e.from);
+      const m = meta[id] || (meta[id] = { energy: 0, place: '', minutes: 0 });
+      if (p.energy && (!m.energy || !p.legacy)) m.energy = p.energy;
+      if (p.place && !m.place) m.place = p.place;
+      if (p.minutes && !m.minutes) m.minutes = p.minutes;
+    } else if (e.type === 'substep') {
+      const step = byId[e.to];
+      if (!step || step.status === 2) return;
+      const id = taskIdOf(e.from);
+      // เส้นเชื่อมมาตามลำดับขั้นอยู่แล้ว อันแรกที่ยังไม่เสร็จคืออันที่ต้องทำต่อ
+      if (steps[id] === undefined) steps[id] = step.label;
+    }
+  });
+
+  _metaIdx = meta; _stepIdx = steps; _metaFor = STATE;
+}
+
+const metaOf = q => { buildIndexes(); return _metaIdx[q.taskId] || EMPTY_META; };
+const nextStepOf = q => { buildIndexes(); return _stepIdx[q.taskId] || ''; };
+const hasFullMeta = m => !!(m.energy && m.place && m.minutes);
+
+const fmtMin = n => n < 60 ? n + ' นาที'
+  : (n % 60 ? Math.floor(n / 60) + ' ชม. ' + (n % 60) + ' น.' : (n / 60) + ' ชม.');
+
+/** ป้ายบริบทเล็ก ๆ ที่ใช้ซ้ำทุกมุมมอง — ไอคอนกับตัวอักษรเท่านั้น ไม่กินโควตาสี */
+function metaChips(q) {
+  const m = metaOf(q), out = [];
+  if (m.energy) out.push('<span class="mchip' + (m.energy === 3 ? ' hi' : '') + '">⚡' + ENERGY_SHORT[m.energy] + '</span>');
+  if (m.place) out.push('<span class="mchip">📍' + esc(m.place) + '</span>');
+  if (m.minutes) out.push('<span class="mchip">⏱' + esc(fmtMin(m.minutes)) + '</span>');
+  return out.length ? '<span class="mchips">' + out.join('') + '</span>' : '';
+}
+
+/** รายชื่อสถานที่ทั้งหมดที่พบในแท็ก — ใช้สร้างตัวเลือกในแถบกรอง */
+function placeList() {
+  buildIndexes();
+  const set = new Set();
+  Object.keys(_metaIdx).forEach(id => { if (_metaIdx[id].place) set.add(_metaIdx[id].place); });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'th'));
+}
+
 const priColor = p => 'var(--pri-' + (({5:5,3:3,1:1}[Number(p)]) || 0) + ')';
 const xpOf = q => XP_BY_PRIORITY[String(Number(q.priority) || 0)] || 5;
 // สูตรเดียวกับ Xp.js ฝั่งเซิร์ฟเวอร์ ใช้ประมาณผลทันทีบนหน้าจอ
@@ -645,6 +857,32 @@ function visibleQuests(opts) {
   }
   if (filters.skill) {
     list = list.filter(q => (q.skillId || 'unsorted') === filters.skill);
+  }
+
+  /**
+   * โหมดฉุกเฉินตัดจบตรงนี้เลย — เหลือเฉพาะงานที่รอไม่ได้ และเรียงตามความสำคัญเสมอ
+   * ตัวกรองที่เหลือ (ช่วงเวลา/พลังงาน/สถานที่/ระยะเวลา) ถูกพักทั้งหมดโดยตั้งใจ
+   * เพราะตัวกรองที่ตั้งค้างไว้ตอนเช้าไม่ควรมาบังงานด่วนตอนบ่าย ส่วนช่องค้นหายังใช้ได้
+   */
+  if (emergency) {
+    const t0 = todayBkk();
+    const todayKey = bkkDayKey(new Date());
+    return list.filter(q => {
+      if ((Number(q.priority) || 0) >= 5) return true;
+      const d = bkkStartOfDay(q.dueDate);
+      return !!d && (d < t0 || bkkDayKey(q.dueDate) === todayKey);
+    }).sort(byPriorityThenDue);
+  }
+
+  if (filters.energy) {
+    list = list.filter(q => metaOf(q).energy === filters.energy);
+  }
+  if (filters.place) {
+    list = list.filter(q => metaOf(q).place === filters.place);
+  }
+  // งานที่ยังไม่ติดแท็กเวลาไม่เข้าเกณฑ์ "ไม่เกิน X นาที" เพราะยังไม่รู้ว่ากินเวลาเท่าไร
+  if (filters.maxMin) {
+    list = list.filter(q => { const n = metaOf(q).minutes; return n > 0 && n <= filters.maxMin; });
   }
 
   if (filters.range !== 'all' && !o.ignoreRange) {
@@ -729,14 +967,35 @@ async function applyOptimisticComplete(taskId, q) {
 
 // ───────── มุมมอง ─────────
 
-const VIEWS = ['today', 'matrix', 'gantt', 'map', 'table'];
+const VIEWS = ['today', 'matrix', 'batch', 'gantt', 'map', 'table'];
 
-$$('.chip[data-view]').forEach(b => b.onclick = () => {
-  view = b.dataset.view;
-  $$('.chip[data-view]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  VIEWS.forEach(v => $('#v-' + v).classList.toggle('hidden', v !== view));
+function switchView(v) {
+  view = v;
+  $$('.chip[data-view]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === v)));
+  VIEWS.forEach(k => $('#v-' + k).classList.toggle('hidden', k !== v));
   render();
+}
+
+$$('.chip[data-view]').forEach(b => b.onclick = () => switchView(b.dataset.view));
+
+$$('#batch-by .chip').forEach(b => b.onclick = () => {
+  batchBy = BATCH_BY.indexOf(b.dataset.by) < 0 ? 'place' : b.dataset.by;
+  $$('#batch-by .chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  renderBatch();
 });
+
+// ───────── โหมดฉุกเฉิน ─────────
+
+function setEmergency(on) {
+  emergency = on;
+  $('#btn-sos').setAttribute('aria-pressed', String(on));
+  $('#sosbar').classList.toggle('hidden', !on);
+  document.body.classList.toggle('sos', on);
+  // มุมมองอื่นแบ่งงานตามมิติที่ตอนฉุกเฉินไม่สนใจแล้ว ดึงกลับหน้า "วันนี้" ให้เห็นคิวเดียวยาว ๆ
+  if (on && view !== 'today') switchView('today'); else render();
+}
+
+$('#btn-sos').onclick = () => setEmergency(!emergency);
 
 // ───────── แถบกรอง ─────────
 
@@ -745,6 +1004,9 @@ function activeFilterCount() {
   if (filters.range !== 'all') n++;
   if (filters.minPri >= 0) n++;
   if (filters.skill) n++;
+  if (filters.energy) n++;
+  if (filters.place) n++;
+  if (filters.maxMin) n++;
   if (filters.sort !== FILTER_DEFAULT.sort) n++;
   return n;
 }
@@ -762,8 +1024,24 @@ function syncFilterUi() {
     sel.dataset.built = '1';
   }
   sel.value = filters.skill;
+
+  // สถานที่มาจากแท็กที่ผู้ใช้ตั้งเอง จึงเปลี่ยนได้ทุกครั้งที่ซิงก์ — สร้างใหม่เมื่อชุดค่าต่างจากเดิม
+  const places = placeList();
+  const psel = $('#f-place');
+  const sig = places.join(' ');
+  if (psel.dataset.sig !== sig) {
+    psel.innerHTML = '<option value="">ทุกสถานที่</option>' +
+      places.map(p => '<option value="' + esc(p) + '">📍 ' + esc(p) + '</option>').join('');
+    psel.dataset.sig = sig;
+  }
+  // แท็กสถานที่อาจหายไปหลังซิงก์ ทำให้ค่าที่กรองค้างอยู่ไม่มีตัวเลือกรองรับ — ล้างทิ้ง
+  if (filters.place && places.indexOf(filters.place) < 0) filters.place = '';
+  psel.value = filters.place;
+
   $('#f-range').value = filters.range;
   $('#f-pri').value = String(filters.minPri);
+  $('#f-energy').value = String(filters.energy);
+  $('#f-time').value = String(filters.maxMin);
   $('#f-sort').value = filters.sort;
 
   const total = (STATE.quests || []).filter(q => q.entityClass === 'quest').length;
@@ -786,6 +1064,9 @@ $('#f-search').oninput = e => { filters.search = e.target.value.trim().toLowerCa
 $('#f-range').onchange = e => { filters.range = e.target.value; render(); };
 $('#f-pri').onchange = e => { filters.minPri = Number(e.target.value); render(); };
 $('#f-skill').onchange = e => { filters.skill = e.target.value; render(); };
+$('#f-energy').onchange = e => { filters.energy = Number(e.target.value); render(); };
+$('#f-place').onchange = e => { filters.place = e.target.value; render(); };
+$('#f-time').onchange = e => { filters.maxMin = Number(e.target.value); render(); };
 $('#f-sort').onchange = e => { filters.sort = e.target.value; render(); };
 
 function render() {
@@ -799,9 +1080,14 @@ function render() {
   $('#xp-line').textContent = p.xp + ' XP · อีก ' + Math.max(0, ceilXp - p.xp) + ' ถึงเลเวล ' + (p.level + 1);
 
   syncFilterUi();
+  if (emergency) {
+    const n = visibleQuests().length;
+    $('#sos-count').textContent = n ? n + ' งานที่รอไม่ได้' : 'ไม่มีงานค้างแล้ว';
+  }
 
   if (view === 'today') renderToday();
   else if (view === 'matrix') renderMatrix();
+  else if (view === 'batch') renderBatch();
   else if (view === 'gantt') renderGantt();
   else if (view === 'map') renderTree();
   else renderTable();
@@ -815,10 +1101,16 @@ function taskItemHtml(q) {
   const total = Number(q.itemCount) || 0, done = Number(q.itemDoneCount) || 0;
   if (total) bits.push(done + '/' + total + ' ขั้นย่อย');
   bits.push(xpOf(q) + ' XP');
+
+  // ขั้นย่อยที่ค้างอยู่อันแรก — เดิมเห็นแค่ตัวเลข "2/5" ซึ่งไม่ได้บอกว่าต้องทำอะไรต่อ
+  const step = nextStepOf(q);
+  const chips = metaChips(q);
+
   return '<div class="titem">' +
     '<span class="pri-pill" style="background:' + priColor(q.priority) + '"></span>' +
     '<div class="body"><div class="t">' + esc(q.title) + '</div>' +
-    '<div class="sub">' + bits.map(esc).join(' · ') + '</div></div>' +
+    (step ? '<div class="sub nextstep">▶ ทำต่อ: <b>' + esc(step) + '</b></div>' : '') +
+    '<div class="sub">' + bits.map(esc).join(' · ') + chips + '</div></div>' +
     '<button class="tree-check" data-done="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button>' +
     '</div>';
 }
@@ -851,7 +1143,8 @@ function renderToday() {
 
   if (!sections.length) {
     host.innerHTML = '<p class="empty">' +
-      (activeFilterCount() || filters.search ? 'ไม่มีงานตรงตัวกรอง' : 'ไม่มีงานค้าง 🎉') + '</p>';
+      (emergency ? 'ไม่เหลืองานด่วนแล้ว 🎉 ปิดโหมดฉุกเฉินได้'
+        : activeFilterCount() || filters.search ? 'ไม่มีงานตรงตัวกรอง' : 'ไม่มีงานค้าง 🎉') + '</p>';
     return;
   }
 
@@ -898,6 +1191,7 @@ function renderMatrix() {
         '<span class="t">' + esc(q.title) + '</span>' +
         '<span class="muted small">' + esc(PRI_LABEL[Number(q.priority) || 0]) +
           (q.dueDate ? ' · ' + bkkNice(q.dueDate) : '') + '</span>' +
+        metaChips(q) +
         '<button class="tree-check" data-done="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button></div>'
       ).join('') : '<p class="muted small">ไม่มีงาน</p>') +
       '</div>';
@@ -987,6 +1281,80 @@ async function setQuadrant(taskId, quadrant) {
   }
 }
 
+// ───────── จัดกลุ่มงาน — รวมงานที่ทำต่อกันรวดเดียวได้ ─────────
+
+/**
+ * คืนกลุ่มของงานตามแกนที่เลือก หรือ null ถ้างานนั้นยังไม่ได้ติดแท็กแกนนั้น
+ * ord ใช้บังคับลำดับกลุ่มที่มีลำดับจริง (พลังงาน/ระยะเวลา) นอกนั้นเรียงตามชื่อ
+ */
+function batchGroupOf(q) {
+  const m = metaOf(q);
+  if (batchBy === 'place') return m.place ? { k: 'p:' + m.place, t: '📍 ' + m.place } : null;
+  if (batchBy === 'energy') return m.energy ? { k: 'e:' + m.energy, t: '⚡ ' + ENERGY_LABEL[m.energy], ord: -m.energy } : null;
+  if (batchBy === 'time') {
+    if (!m.minutes) return null;
+    for (let i = 0; i < TIME_BUCKETS.length; i++) {
+      if (m.minutes <= TIME_BUCKETS[i].max) return { k: 't:' + i, t: TIME_BUCKETS[i].t, ord: i };
+    }
+  }
+  const sk = q.skillId || '';
+  return sk ? { k: 's:' + sk, t: skillLabels()[sk] || sk } : null;
+}
+
+function renderBatch() {
+  const host = $('#batch-body');
+  const list = visibleQuests();
+
+  const groups = {};
+  const orphan = [];   // ยังไม่ได้ติดแท็กแกนที่เลือก จึงยังจับเป็นก้อนกับใครไม่ได้
+  list.forEach(q => {
+    const g = batchGroupOf(q);
+    if (!g) { orphan.push(q); return; }
+    (groups[g.k] = groups[g.k] || { t: g.t, ord: g.ord, items: [] }).items.push(q);
+  });
+
+  const keys = Object.keys(groups).sort((a, b) =>
+    (groups[a].ord === undefined ? 0 : groups[a].ord) - (groups[b].ord === undefined ? 0 : groups[b].ord) ||
+    groups[a].t.localeCompare(groups[b].t, 'th'));
+
+  if (!keys.length && !orphan.length) {
+    host.innerHTML = '<p class="empty">ไม่มีงานตรงตัวกรอง</p>';
+    return;
+  }
+
+  const block = (title, items, partial, note) =>
+    '<div class="bgroup' + (partial ? ' partial' : '') + '">' +
+      '<div class="bgroup-h"><b>' + title + '</b><span class="n">' + items.length + ' งาน</span></div>' +
+      (note ? '<p class="bgroup-note">' + note + '</p>' : '') +
+      items.map(taskItemHtml).join('') +
+    '</div>';
+
+  let html = keys.map(k => {
+    const g = groups[k];
+    // รวมเวลาได้เฉพาะงานที่ติดแท็ก ⏱ ไว้ — บอกไปตรง ๆ ว่าเหลืออีกกี่งานที่ยังไม่รู้เวลา
+    let known = 0, sum = 0, incomplete = 0;
+    g.items.forEach(q => {
+      const m = metaOf(q);
+      if (m.minutes) { known++; sum += m.minutes; }
+      if (!hasFullMeta(m)) incomplete++;
+    });
+
+    const parts = [];
+    if (sum) parts.push('รวม ' + fmtMin(sum) + (known < g.items.length ? ' (จาก ' + known + ' งานที่ระบุเวลาไว้)' : ''));
+    if (incomplete) parts.push(incomplete + ' งานยังแท็กไม่ครบ');
+
+    return block(esc(g.t), g.items, incomplete > 0, esc(parts.join(' · ')));
+  }).join('');
+
+  if (orphan.length) {
+    html += block('ยังไม่ได้จัดกลุ่ม', orphan, true,
+      'ติดแท็กในงานที่ TickTick แล้วกดซิงก์ — ดูรูปแบบแท็กได้ที่ ⚙ ตั้งค่า');
+  }
+
+  host.innerHTML = html;
+  host.querySelectorAll('button[data-done]').forEach(b => b.onclick = () => doComplete(b.dataset.done, b));
+}
+
 // ───────── ไทม์ไลน์ ─────────
 
 function renderGantt() {
@@ -1052,9 +1420,18 @@ function ganttRow(q, t0, cols, rangeDays, isEvent) {
   let cells = '';
   for (let i = 0; i < rangeDays; i++) cells += '<div class="gcell' + (i === 0 ? ' today' : '') + '"></div>';
 
+  // แถบป้ายชื่อไทม์ไลน์แคบเกินกว่าจะใส่ป้ายบริบทได้ จึงพ่วงไว้ในทูลทิปแทน
+  const m = metaOf(q);
+  const ctx = [
+    m.energy ? '⚡' + ENERGY_SHORT[m.energy] : '',
+    m.place ? '📍' + m.place : '',
+    m.minutes ? '⏱' + fmtMin(m.minutes) : ''
+  ].filter(Boolean).join(' ');
+
   const tip = esc(q.title) + ' · ' + PRI_LABEL[Number(q.priority) || 0] +
     (isEvent ? '' : ' · ' + xpOf(q) + ' XP') +
-    (d ? ' · ถึง ' + bkkDayKey(q.dueDate || q.startDate) : '');
+    (d ? ' · ถึง ' + bkkDayKey(q.dueDate || q.startDate) : '') +
+    (ctx ? ' · ' + esc(ctx) : '');
 
   return '<div class="gseg" style="grid-template-columns:' + cols + '">' +
     '<div class="glabel" title="' + esc(q.title) + '">' +
@@ -1108,9 +1485,18 @@ function renderTree() {
     if (n.type === 'quest') {
       meta.push(PRI_LABEL[Number(n.priority) || 0]);
       if (n.dueDate) meta.push(bkkNice(n.dueDate));
+      // แท็กบริบทสรุปเป็นข้อความสั้นแยกออกมา ที่เหลือค่อยพับรวมเป็น 🏷️
+      const cm = metaOf({ taskId: n.srcTaskId });
+      const ctx = [
+        cm.energy ? '⚡' + ENERGY_SHORT[cm.energy] : '',
+        cm.place ? '📍' + cm.place : '',
+        cm.minutes ? '⏱' + fmtMin(cm.minutes) : ''
+      ].filter(Boolean).join(' ');
+      if (ctx) meta.push(ctx);
+
       // แท็กร่วมพับเป็นข้อความ ไม่แตกเป็นกิ่งแยก จะได้ไม่เพิ่มเส้นให้รก
       const tags = g.edges.filter(e => e.type === 'tagged' && e.from === id)
-        .map(e => (byId[e.to] || {}).label).filter(Boolean);
+        .map(e => (byId[e.to] || {}).label).filter(l => l && !parseTag(l));
       if (tags.length) meta.push('🏷️ ' + tags.join(', '));
     }
 
@@ -1154,13 +1540,14 @@ function renderTable() {
     return '<tr>' +
       '<td>' + esc(q.title) + (q.paused === true || q.paused === 'TRUE' ? ' <span class="muted small">· พักไว้</span>' : '') + '</td>' +
       '<td class="sec">' + esc(labels[q.skillId] || q.skillId || '—') + '</td>' +
+      '<td>' + (metaChips(q) || '<span class="muted">—</span>') + '</td>' +
       '<td class="sec">' + PRI_LABEL[Number(q.priority) || 0] + '</td>' +
       '<td class="num sec">' + (q.dueDate ? bkkDayKey(q.dueDate) : '—') + '</td>' +
       '<td class="num sec">' + (total ? done + '/' + total : '—') + '</td>' +
       '<td class="num">' + xpOf(q) + '</td>' +
       '<td><button class="tree-check" data-done="' + esc(q.taskId) + '" aria-label="ทำเสร็จ">✓</button></td>' +
       '</tr>';
-  }).join('') || '<tr><td colspan="7" class="muted">ไม่มีงานตรงตัวกรอง</td></tr>';
+  }).join('') || '<tr><td colspan="8" class="muted">ไม่มีงานตรงตัวกรอง</td></tr>';
 
   tb.querySelectorAll('button[data-done]').forEach(b => b.onclick = () => doComplete(b.dataset.done, b));
 }
@@ -1202,7 +1589,9 @@ window.TG = {
   get state() { return STATE; },
   set state(v) { STATE = v; },
   render, refresh, callApi, doComplete, setQuadrant,
-  autoQuadrant, quadrantOf, bkkDayKey, bkkStartOfDay
+  autoQuadrant, quadrantOf, bkkDayKey, bkkStartOfDay,
+  switchView, setEmergency, parseTag, metaOf, nextStepOf, placeList,
+  get filters() { return filters; }
 };
 </script>
 </body>
