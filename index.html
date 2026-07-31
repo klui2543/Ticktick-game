@@ -267,6 +267,20 @@ td.num { font-variant-numeric: tabular-nums; }
 .mchip.hi { border-color: var(--axis); color: var(--ink-1); font-weight: 500; }
 .nextstep b { font-weight: 500; color: var(--ink-2); }
 
+/* ── เวลาที่ถูกจองไปแล้ว: เวรและนัด ── */
+.titem.ev .t { color: var(--ink-2); }
+.ev-pill { width: 4px; align-self: stretch; border-radius: 2px; flex: none; background: var(--axis); }
+.budget {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline;
+  font-size: 12.5px; color: var(--ink-2);
+  background: var(--plane); border: 1px solid var(--grid);
+  border-radius: 10px; padding: 8px 11px; margin-bottom: 12px;
+}
+.budget b { font-weight: 600; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+/* เวลาที่วางไว้เกินเวลาว่าง = แผนวันนั้นไม่จริง ต้องเห็นทันที */
+.budget.over { border-color: var(--crit); }
+.budget.over b.left { color: var(--crit); }
+
 /* ── โหมดฉุกเฉิน ── */
 #btn-sos[aria-pressed="true"] { background: var(--crit); border-color: transparent; color: #fff; }
 .sosbar {
@@ -790,6 +804,71 @@ const metaOf = q => { buildIndexes(); return _metaIdx[q.taskId] || EMPTY_META; }
 const nextStepOf = q => { buildIndexes(); return _stepIdx[q.taskId] || ''; };
 const hasFullMeta = m => !!(m.energy && m.place && m.minutes);
 
+// ───────── งบเวลา: เวรและนัดกินเวลาไปเท่าไรแล้ว ─────────
+// งานมีแท็ก ⏱ บอกว่าใช้เวลาเท่าไร แต่ถ้าไม่รู้ว่าวันนั้นเหลือเวลาว่างจริงกี่ชั่วโมง
+// ตัวเลขนั้นก็ตอบไม่ได้ว่า "วางแผนไว้เกินตัวหรือยัง" — เวรกับนัดจึงต้องเข้ามาในสมการ
+
+/** ชั่วโมงตื่นต่อวันที่ใช้ประมาณเวลาว่าง — ค่าคงที่หยาบ ๆ ไม่ใช่ตารางเวลาจริง */
+const AWAKE_MIN = 16 * 60;
+
+const bkkTimeFmt = new Intl.DateTimeFormat('th-TH', {
+  timeZone: BKK_TZ, hour: '2-digit', minute: '2-digit', hour12: false
+});
+const bkkTime = d => bkkTimeFmt.format(d);
+
+/** เวรหรือนัดที่ระบุช่วงเวลาจริง — ที่ start กับ due เท่ากันคือไม่รู้ว่ากินเวลาเท่าไร */
+const evSpan = q => {
+  const s = toDate(q.startDate), e = toDate(q.dueDate);
+  return s && e && e - s > 0 ? [s, e] : null;
+};
+
+const eventsAll = () => (STATE.quests || []).filter(q => q.entityClass === 'event');
+
+/**
+ * งบเวลาของวันหนึ่ง — เวรที่ข้ามเที่ยงคืนถูกตัดแบ่งตามวัน
+ * (เวรดึก 2:30–8:30 อยู่วันเดียว แต่ 16:30–0:00 กินสองวัน ถ้าไม่ตัดจะนับผิด)
+ * นับจากงานทั้งหมด ไม่ผ่านตัวกรอง เพราะนี่คือความจริงของวันนั้น ไม่ใช่มุมมองที่เลือกดู
+ */
+function dayBudget(dayStart) {
+  const dayEnd = addDays(dayStart, 1);
+  const key = bkkDayFmt.format(dayStart);
+  let committed = 0, untimed = 0, taskMin = 0, taskUntagged = 0;
+
+  (STATE.quests || []).forEach(q => {
+    if (q.entityClass === 'event') {
+      const span = evSpan(q);
+      // ไม่ระบุเวลา (เช่น "คลินิกพิเศษ โปรดตรวจสอบจากตารางเวรอีกครั้ง") — นับหัวไว้ ไม่เดาชั่วโมง
+      if (!span) { if (bkkDayKey(q.startDate) === key) untimed++; return; }
+      const a = Math.max(span[0], dayStart), b = Math.min(span[1], dayEnd);
+      if (b > a) committed += (b - a) / 60000;
+      return;
+    }
+    if (bkkDayKey(q.dueDate) !== key) return;
+    const n = metaOf(q).minutes;
+    if (n) taskMin += n; else taskUntagged++;
+  });
+
+  committed = Math.round(committed);
+  return { committed, untimed, taskMin, taskUntagged, free: AWAKE_MIN - committed - taskMin };
+}
+
+function budgetHtml(b, scopeLabel) {
+  const bits = [
+    'ติดเวร/นัด <b>' + esc(b.committed ? fmtMin(b.committed) : 'ไม่มี') + '</b>',
+    'งานที่วางไว้ <b>' + esc(b.taskMin ? fmtMin(b.taskMin) : 'ไม่มี') + '</b>',
+    (b.free >= 0 ? 'เหลือราว <b class="left">' + esc(fmtMin(b.free)) + '</b>'
+                 : 'เกินไป <b class="left">' + esc(fmtMin(-b.free)) + '</b>')
+  ];
+  const notes = [];
+  if (b.untimed) notes.push(b.untimed + ' รายการไม่ระบุเวลา');
+  if (b.taskUntagged) notes.push(b.taskUntagged + ' งานยังไม่ติดแท็ก ⏱');
+
+  return '<div class="budget' + (b.free < 0 ? ' over' : '') + '">' +
+    '<span>' + esc(scopeLabel) + '</span>' + bits.join('<span class="muted">·</span>') +
+    (notes.length ? '<span class="muted">· ' + esc(notes.join(' · ')) + '</span>' : '') +
+    '</div>';
+}
+
 const fmtMin = n => n < 60 ? n + ' นาที'
   : (n % 60 ? Math.floor(n / 60) + ' ชม. ' + (n % 60) + ' น.' : (n / 60) + ' ชม.');
 
@@ -1115,6 +1194,35 @@ function taskItemHtml(q) {
     '</div>';
 }
 
+/** เวรและนัดของวันนี้ — แสดงอย่างเดียว ปิดไม่ได้ ไม่ได้ XP แต่กินเวลาจริง */
+function todayEventsHtml(t0, todayKey) {
+  const dayEnd = addDays(t0, 1);
+  const rows = eventsAll().filter(q => {
+    const span = evSpan(q);
+    if (!span) return bkkDayKey(q.startDate) === todayKey;
+    return span[1] > t0 && span[0] < dayEnd;
+  }).sort((a, b) => (toDate(a.startDate) || 0) - (toDate(b.startDate) || 0));
+
+  if (!rows.length) return '';
+
+  return '<div class="tsec"><div class="tsec-h"><b>ติดไว้แล้ววันนี้</b>' +
+    '<span class="muted small">' + rows.length + '</span></div>' +
+    rows.map(q => {
+      const span = evSpan(q);
+      let when = 'ไม่ระบุเวลา';
+      if (span) {
+        when = bkkTime(span[0]) + '–' + bkkTime(span[1]);
+        // เวรที่เริ่มเมื่อวานหรือลากไปพรุ่งนี้ ต้องบอก ไม่งั้นอ่านเป็นช่วงในวันเดียว
+        if (bkkDayKey(span[0]) !== todayKey) when = 'ตั้งแต่เมื่อวาน · ' + when;
+        else if (bkkDayKey(span[1]) !== todayKey) when += ' (ข้ามวัน)';
+      }
+      return '<div class="titem ev">' +
+        '<span class="ev-pill"></span>' +
+        '<div class="body"><div class="t">' + esc(q.title) + '</div>' +
+        '<div class="sub">' + esc(when) + '</div></div></div>';
+    }).join('') + '</div>';
+}
+
 function renderToday() {
   const host = $('#today-body');
   const t0 = todayBkk();
@@ -1141,14 +1249,17 @@ function renderToday() {
     { t: 'ไม่มีกำหนด', cls: '', items: someday }
   ].filter(s => s.items.length);
 
+  // งบเวลากับเวรของวันนี้อยู่เหนือทุกอย่าง — ไม่ผูกกับตัวกรอง เพราะเป็นความจริงของวัน
+  const head = budgetHtml(dayBudget(t0), 'วันนี้') + todayEventsHtml(t0, todayKey);
+
   if (!sections.length) {
-    host.innerHTML = '<p class="empty">' +
+    host.innerHTML = head + '<p class="empty">' +
       (emergency ? 'ไม่เหลืองานด่วนแล้ว 🎉 ปิดโหมดฉุกเฉินได้'
         : activeFilterCount() || filters.search ? 'ไม่มีงานตรงตัวกรอง' : 'ไม่มีงานค้าง 🎉') + '</p>';
     return;
   }
 
-  host.innerHTML = sections.map(s =>
+  host.innerHTML = head + sections.map(s =>
     '<div class="tsec"><div class="tsec-h ' + s.cls + '"><b>' + s.t + '</b>' +
     '<span class="muted small">' + s.items.length + '</span></div>' +
     s.items.map(taskItemHtml).join('') + '</div>'
@@ -1317,8 +1428,24 @@ function renderBatch() {
     (groups[a].ord === undefined ? 0 : groups[a].ord) - (groups[b].ord === undefined ? 0 : groups[b].ord) ||
     groups[a].t.localeCompare(groups[b].t, 'th'));
 
+  /**
+   * งบเวลา 7 วัน — ก้อนงานจะจัดได้จริงก็ต่อเมื่อมีเวลาว่างพอรองรับ
+   * ต่างจากหน้า "วันนี้" ตรงที่ฝั่งงานนับตามตัวกรองที่เปิดอยู่ เพราะนับเฉพาะที่เห็นบนจอ
+   */
+  const t0 = todayBkk();
+  const week = { committed: 0, untimed: 0, taskMin: 0, taskUntagged: 0, free: 0 };
+  for (let i = 0; i < 7; i++) {
+    const d = dayBudget(addDays(t0, i));
+    week.committed += d.committed;
+    week.untimed += d.untimed;
+  }
+  list.forEach(q => { const n = metaOf(q).minutes; if (n) week.taskMin += n; else week.taskUntagged++; });
+  week.free = 7 * AWAKE_MIN - week.committed - week.taskMin;
+
+  const head = budgetHtml(week, '7 วันข้างหน้า');
+
   if (!keys.length && !orphan.length) {
-    host.innerHTML = '<p class="empty">ไม่มีงานตรงตัวกรอง</p>';
+    host.innerHTML = head + '<p class="empty">ไม่มีงานตรงตัวกรอง</p>';
     return;
   }
 
@@ -1329,7 +1456,7 @@ function renderBatch() {
       items.map(taskItemHtml).join('') +
     '</div>';
 
-  let html = keys.map(k => {
+  let html = head + keys.map(k => {
     const g = groups[k];
     // รวมเวลาได้เฉพาะงานที่ติดแท็ก ⏱ ไว้ — บอกไปตรง ๆ ว่าเหลืออีกกี่งานที่ยังไม่รู้เวลา
     let known = 0, sum = 0, incomplete = 0;
