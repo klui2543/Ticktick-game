@@ -108,6 +108,22 @@ header.bar {
 .chip { padding: 7px 14px; border-radius: 999px; font-size: 14px; min-height: 38px; }
 .chip[aria-pressed="true"] { background: var(--ink-1); color: var(--plane); border-color: transparent; }
 
+/* ── แถบกรองกลาง: หนึ่งแถวคุมทุกมุมมอง ── */
+.fbar {
+  background: var(--surface-1); border: 1px solid var(--hairline);
+  border-radius: 12px; padding: 10px; margin-bottom: 12px;
+}
+.fbar-top { display: flex; gap: 8px; align-items: center; }
+.fbar-top input { flex: 1; min-width: 0; }
+.fbar-body {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--grid);
+}
+.fctl { display: grid; gap: 4px; font-size: 12px; color: var(--ink-2); }
+.fctl select { padding: 8px 10px; min-height: 40px; }
+#f-count { font-variant-numeric: tabular-nums; }
+#f-count:not(:empty) { margin-left: 5px; color: var(--cat-1); font-weight: 600; }
+
 /* ปุ่มติ๊กเสร็จ — วงกลมเล็กแต่พื้นที่แตะจริง 44px ผ่าน ::after
    (ขยายเฉพาะพื้นที่รับสัมผัส ไม่ดันเลย์เอาต์ให้ห่างขึ้น) */
 .tree-check {
@@ -254,22 +270,27 @@ td.num { font-variant-numeric: tabular-nums; }
 <div id="tip"></div>
 <div id="toast" class="hidden"></div>
 
-<section id="setup" class="wrap hidden">
+<section id="setup" class="wrap hidden" style="max-width:420px;padding-top:12vh">
   <div class="card">
-    <h1>เชื่อมต่อกับ Apps Script</h1>
-    <p class="sec small">ใส่ครั้งเดียว เก็บไว้ในเครื่องนี้เท่านั้น ไม่ได้ฝังในไฟล์เว็บ</p>
-    <div style="display:grid;gap:12px;margin-top:14px">
-      <label class="small sec">Web app URL (ลงท้าย /exec)
-        <input id="in-url" placeholder="https://script.google.com/macros/s/.../exec">
+    <h1>Task game</h1>
+    <p class="sec small" style="margin:4px 0 18px">ใส่รหัสผ่านครั้งเดียว จำไว้ในเครื่องนี้</p>
+    <form id="login-form" style="display:grid;gap:12px">
+      <label class="small sec">รหัสผ่าน
+        <input id="in-token" type="password" autocomplete="current-password"
+               inputmode="text" placeholder="••••••••" autofocus>
       </label>
-      <label class="small sec">Token (จาก step6_setupApi)
-        <input id="in-token" placeholder="32 ตัวอักษร">
-      </label>
-      <div class="row">
-        <button class="primary" id="btn-connect">เชื่อมต่อ</button>
-        <span id="setup-msg" class="small"></span>
-      </div>
-    </div>
+      <button class="primary" type="submit" id="btn-connect" style="width:100%">เข้าสู่ระบบ</button>
+      <div id="setup-msg" class="small" style="min-height:20px"></div>
+      <details>
+        <summary class="small muted" style="cursor:pointer">ตั้งค่าขั้นสูง</summary>
+        <label class="small sec" style="display:block;margin-top:10px">ที่อยู่เซิร์ฟเวอร์ (Apps Script /exec)
+          <input id="in-url" spellcheck="false">
+        </label>
+        <p class="small muted" style="margin:6px 0 0">
+          เปลี่ยนเฉพาะตอนย้าย deployment ปกติไม่ต้องแตะ
+        </p>
+      </details>
+    </form>
   </div>
 </section>
 
@@ -287,6 +308,8 @@ td.num { font-variant-numeric: tabular-nums; }
         <div class="row">
           <span id="status" class="small muted"></span>
           <button id="btn-sync">ซิงก์</button>
+          <button id="btn-logout" title="ออกจากระบบ" aria-label="ออกจากระบบ"
+                  style="padding:8px 10px">⏻</button>
         </div>
       </div>
     </div>
@@ -299,6 +322,47 @@ td.num { font-variant-numeric: tabular-nums; }
       <button class="chip" data-view="gantt" aria-pressed="false">ไทม์ไลน์</button>
       <button class="chip" data-view="map" aria-pressed="false">ผังความคิด</button>
       <button class="chip" data-view="table" aria-pressed="false">ทั้งหมด</button>
+    </div>
+
+    <!-- แถบกรองเดียวคุมทุกมุมมอง — ไม่แยกตัวกรองไว้ในแต่ละการ์ด -->
+    <div class="fbar">
+      <div class="fbar-top">
+        <input id="f-search" placeholder="ค้นหางาน…" aria-label="ค้นหางาน">
+        <button class="chip" id="f-toggle" aria-expanded="false">ตัวกรอง<span id="f-count"></span></button>
+        <button class="chip hidden" id="f-clear">ล้าง</button>
+      </div>
+      <div class="fbar-body hidden" id="f-body">
+        <label class="fctl">ช่วงเวลา
+          <select id="f-range">
+            <option value="all">ทั้งหมด</option>
+            <option value="today">วันนี้</option>
+            <option value="7">7 วัน</option>
+            <option value="30">1 เดือน</option>
+            <option value="overdue">เลยกำหนด</option>
+            <option value="none">ไม่มีกำหนด</option>
+          </select>
+        </label>
+        <label class="fctl">ความสำคัญ
+          <select id="f-pri">
+            <option value="-1">ทุกระดับ</option>
+            <option value="5">สำคัญมากเท่านั้น</option>
+            <option value="3">ปานกลางขึ้นไป</option>
+            <option value="1">ต่ำขึ้นไป</option>
+          </select>
+        </label>
+        <label class="fctl">ทักษะ
+          <select id="f-skill"></select>
+        </label>
+        <label class="fctl">เรียงตาม
+          <select id="f-sort">
+            <option value="priority">ความสำคัญ</option>
+            <option value="due">วันครบกำหนด</option>
+            <option value="xp">XP</option>
+            <option value="title">ชื่องาน</option>
+          </select>
+        </label>
+      </div>
+      <div class="small muted" id="f-summary" style="margin-top:6px"></div>
     </div>
 
     <section id="v-today" class="card">
@@ -318,10 +382,6 @@ td.num { font-variant-numeric: tabular-nums; }
     </section>
 
     <section id="v-gantt" class="card hidden">
-      <div class="filters" style="margin-top:0">
-        <button class="chip" data-range="7" aria-pressed="true">7 วัน</button>
-        <button class="chip" data-range="30" aria-pressed="false">1 เดือน</button>
-      </div>
       <div class="legend" style="margin-bottom:10px">
         <span><i style="background:var(--pri-5)"></i>สำคัญมาก</span>
         <span><i style="background:var(--pri-3)"></i>ปานกลาง</span>
@@ -343,10 +403,6 @@ td.num { font-variant-numeric: tabular-nums; }
     </section>
 
     <section id="v-table" class="card hidden">
-      <div class="row" style="margin-bottom:10px">
-        <input id="tbl-search" placeholder="ค้นหาชื่องาน…" style="max-width:220px">
-        <select id="tbl-skill" style="max-width:200px"></select>
-      </div>
       <div style="overflow-x:auto">
         <table id="tbl">
           <thead><tr>
@@ -363,6 +419,15 @@ td.num { font-variant-numeric: tabular-nums; }
 'use strict';
 
 const LS = { url: 'tg_url', token: 'tg_token' };
+
+/**
+ * ที่อยู่เซิร์ฟเวอร์ฝังมากับแอป เพื่อให้หน้าแรกเหลือแค่ช่องรหัสผ่านช่องเดียว
+ *
+ * URL นี้ไม่ใช่ความลับ — ทุก action ต้องมี token ที่เก็บไว้ในเครื่องเท่านั้น
+ * ใครเปิดเจอ URL แต่ไม่มีรหัสผ่านก็ทำอะไรไม่ได้ (มีแค่ action=ping ที่เปิดไว้เช็คสถานะ)
+ * ถ้าต้องย้าย deployment เปลี่ยนได้ที่ "ตั้งค่าขั้นสูง" โดยไม่ต้องแก้โค้ด
+ */
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbyecKXDWz8RVIwO1DwYJXXTLOcQ4Cp36oZbeY48pEloBbEnif50HEAKPoURkv5yyULAlQ/exec';
 const XP_BY_PRIORITY = { 5: 25, 3: 15, 1: 10, 0: 5 };
 const PRI_LABEL = { 5: 'สำคัญมาก', 3: 'ปานกลาง', 1: 'ต่ำ', 0: 'ไม่ระบุ' };
 const BKK_TZ = 'Asia/Bangkok';
@@ -376,11 +441,12 @@ const QUADS = [
 
 let STATE = null;
 let view = 'today';
-let rangeDays = 7;
-let tableSearch = '';
-let tableSkillFilter = '';
 let treeOpen = new Set();
 let toastTimer = null;
+
+/** ตัวกรองชุดเดียวใช้ร่วมกันทุกมุมมอง — เปลี่ยนที่เดียว มีผลทั้งแอป */
+const FILTER_DEFAULT = { search: '', range: 'all', minPri: -1, skill: '', sort: 'priority' };
+let filters = Object.assign({}, FILTER_DEFAULT);
 
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -388,7 +454,10 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 // ───────── การเชื่อมต่อ ─────────
 
 function cfg() {
-  return { url: localStorage.getItem(LS.url), token: localStorage.getItem(LS.token) };
+  return {
+    url: localStorage.getItem(LS.url) || DEFAULT_API_URL,
+    token: localStorage.getItem(LS.token)
+  };
 }
 
 async function callApi(action, extra) {
@@ -401,19 +470,39 @@ async function callApi(action, extra) {
   return j;
 }
 
-$('#btn-connect').onclick = async () => {
-  const url = $('#in-url').value.trim();
+$('#login-form').onsubmit = async e => {
+  e.preventDefault();
+  const url = ($('#in-url').value || '').trim() || DEFAULT_API_URL;
   const token = $('#in-token').value.trim();
   const msg = $('#setup-msg');
-  if (!url || !token) { msg.textContent = 'กรอกให้ครบทั้งสองช่อง'; msg.className = 'small err'; return; }
-  msg.textContent = 'กำลังทดสอบ...'; msg.className = 'small muted';
+  const btn = $('#btn-connect');
+  if (!token) { msg.textContent = 'ใส่รหัสผ่านก่อน'; msg.className = 'small err'; return; }
+
+  btn.disabled = true;
+  msg.textContent = 'กำลังเข้าสู่ระบบ…'; msg.className = 'small muted';
   localStorage.setItem(LS.url, url);
   localStorage.setItem(LS.token, token);
-  try { await callApi('state'); location.reload(); }
-  catch (e) { msg.textContent = 'เชื่อมต่อไม่ได้: ' + e.message; msg.className = 'small err'; }
+  try {
+    await callApi('state');
+    location.reload();
+  } catch (e2) {
+    // รหัสผิดจะได้ error 'unauthorized' จากฝั่งเซิร์ฟเวอร์ แยกจากปัญหาเครือข่าย
+    localStorage.removeItem(LS.token);
+    const wrong = /unauthorized/i.test(e2.message);
+    msg.textContent = wrong ? 'รหัสผ่านไม่ถูกต้อง' : 'เชื่อมต่อไม่ได้: ' + e2.message;
+    msg.className = 'small err';
+    btn.disabled = false;
+    $('#in-token').select();
+  }
 };
 
+function logout() {
+  localStorage.removeItem(LS.token);
+  location.reload();
+}
+
 $('#btn-sync').onclick = () => refresh('sync');
+$('#btn-logout').onclick = () => { if (confirm('ออกจากระบบ?')) logout(); };
 
 async function refresh(action) {
   const st = $('#status');
@@ -478,6 +567,56 @@ const quests = () => (STATE.quests || []).filter(q => q.entityClass === 'quest')
 const byPriorityThenDue = (a, b) =>
   (Number(b.priority) || 0) - (Number(a.priority) || 0) ||
   (toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15);
+
+const SORTS = {
+  priority: byPriorityThenDue,
+  due: (a, b) => ((toDate(a.dueDate) || 8e15) - (toDate(b.dueDate) || 8e15)) ||
+                 ((Number(b.priority) || 0) - (Number(a.priority) || 0)),
+  xp: (a, b) => (xpOf(b) - xpOf(a)) || byPriorityThenDue(a, b),
+  title: (a, b) => String(a.title).localeCompare(String(b.title), 'th')
+};
+
+/**
+ * แหล่งข้อมูลเดียวของทุกมุมมอง — กรองแล้วเรียงตามตัวเลือกในแถบกรอง
+ * ทุก renderer ต้องเรียกผ่านนี้ ห้ามอ่าน STATE.quests ตรง ๆ
+ * ไม่งั้นจะเกิดกรณีที่บางหน้าเรียงคนละแบบอย่างที่เคยเป็น
+ */
+function visibleQuests(opts) {
+  const o = opts || {};
+  let list = (STATE.quests || []).filter(q =>
+    o.includeEvents ? true : q.entityClass === 'quest');
+
+  if (filters.search) {
+    list = list.filter(q => String(q.title).toLowerCase().includes(filters.search));
+  }
+  if (filters.minPri >= 0) {
+    list = list.filter(q => (Number(q.priority) || 0) >= filters.minPri);
+  }
+  if (filters.skill) {
+    list = list.filter(q => (q.skillId || 'unsorted') === filters.skill);
+  }
+
+  if (filters.range !== 'all' && !o.ignoreRange) {
+    const t0 = todayBkk();
+    list = list.filter(q => {
+      const d = bkkStartOfDay(q.dueDate);
+      if (filters.range === 'none') return !d;
+      if (!d) return false;
+      if (filters.range === 'overdue') return d < t0;
+      if (filters.range === 'today') return bkkDayKey(q.dueDate) === bkkDayKey(new Date());
+      return d < addDays(t0, Number(filters.range));   // รวมงานที่เลยกำหนดด้วย
+    });
+  }
+
+  return list.sort(SORTS[filters.sort] || byPriorityThenDue);
+}
+
+/** จำนวนวันที่ไทม์ไลน์ควรกางออก — ผูกกับตัวกรองช่วงเวลาเดียวกัน */
+function ganttDays() {
+  if (filters.range === 'today') return 1;
+  if (filters.range === '30') return 30;
+  return 7;
+}
 
 // ───────── toast ─────────
 
@@ -548,11 +687,55 @@ $$('.chip[data-view]').forEach(b => b.onclick = () => {
   render();
 });
 
-$$('.chip[data-range]').forEach(b => b.onclick = () => {
-  rangeDays = Number(b.dataset.range);
-  $$('.chip[data-range]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+// ───────── แถบกรอง ─────────
+
+function activeFilterCount() {
+  let n = 0;
+  if (filters.range !== 'all') n++;
+  if (filters.minPri >= 0) n++;
+  if (filters.skill) n++;
+  if (filters.sort !== 'priority') n++;
+  return n;
+}
+
+function syncFilterUi() {
+  const n = activeFilterCount();
+  $('#f-count').textContent = n ? String(n) : '';
+  $('#f-clear').classList.toggle('hidden', n === 0 && !filters.search);
+
+  const labels = skillLabels();
+  const sel = $('#f-skill');
+  if (sel.dataset.built !== '1') {
+    sel.innerHTML = '<option value="">ทุกทักษะ</option>' +
+      Object.keys(labels).map(id => '<option value="' + esc(id) + '">' + esc(labels[id]) + '</option>').join('');
+    sel.dataset.built = '1';
+  }
+  sel.value = filters.skill;
+  $('#f-range').value = filters.range;
+  $('#f-pri').value = String(filters.minPri);
+  $('#f-sort').value = filters.sort;
+
+  const total = (STATE.quests || []).filter(q => q.entityClass === 'quest').length;
+  const shown = visibleQuests().length;
+  $('#f-summary').textContent = shown === total
+    ? 'ทั้งหมด ' + total + ' งาน'
+    : 'แสดง ' + shown + ' จาก ' + total + ' งาน';
+}
+
+$('#f-toggle').onclick = function () {
+  const open = $('#f-body').classList.toggle('hidden') === false;
+  this.setAttribute('aria-expanded', String(open));
+};
+$('#f-clear').onclick = () => {
+  filters = Object.assign({}, FILTER_DEFAULT);
+  $('#f-search').value = '';
   render();
-});
+};
+$('#f-search').oninput = e => { filters.search = e.target.value.trim().toLowerCase(); render(); };
+$('#f-range').onchange = e => { filters.range = e.target.value; render(); };
+$('#f-pri').onchange = e => { filters.minPri = Number(e.target.value); render(); };
+$('#f-skill').onchange = e => { filters.skill = e.target.value; render(); };
+$('#f-sort').onchange = e => { filters.sort = e.target.value; render(); };
 
 function render() {
   if (!STATE) return;
@@ -563,6 +746,8 @@ function render() {
   const pct = Math.max(0, Math.min(100, (p.xp - floorXp) / (ceilXp - floorXp) * 100));
   $('#xp-fill').style.width = pct + '%';
   $('#xp-line').textContent = p.xp + ' XP · อีก ' + Math.max(0, ceilXp - p.xp) + ' ถึงเลเวล ' + (p.level + 1);
+
+  syncFilterUi();
 
   if (view === 'today') renderToday();
   else if (view === 'matrix') renderMatrix();
@@ -593,28 +778,29 @@ function renderToday() {
   const todayKey = bkkDayKey(new Date());
   const week = addDays(t0, 7);
 
-  const overdue = [], today = [], soon = [], someday = [];
-  quests().forEach(q => {
+  // visibleQuests เรียงมาแล้วตามตัวเลือกในแถบกรอง — แค่แบ่งกลุ่มตามช่วงเวลา
+  // ห้าม sort ซ้ำที่นี่ ไม่งั้นตัวเลือก "เรียงตาม" จะไม่มีผลในหน้านี้
+  const overdue = [], today = [], soon = [], later = [], someday = [];
+  visibleQuests().forEach(q => {
     if (!q.dueDate) { someday.push(q); return; }
     const d = bkkStartOfDay(q.dueDate);
-    const k = bkkDayKey(q.dueDate);
-    if (k === todayKey) today.push(q);
+    if (bkkDayKey(q.dueDate) === todayKey) today.push(q);
     else if (d < t0) overdue.push(q);
     else if (d < week) soon.push(q);
+    else later.push(q);
   });
 
-  // เลยกำหนดเรียงตามวันที่ค้างนานสุดก่อน ที่เหลือเรียงตามความสำคัญของ TickTick
-  const byDue = (a, b) => (toDate(a.dueDate) || 0) - (toDate(b.dueDate) || 0);
-
   const sections = [
-    { t: 'เลยกำหนด', cls: 'over', items: overdue.sort(byDue) },
-    { t: 'วันนี้', cls: '', items: today.sort(byPriorityThenDue) },
-    { t: '7 วันข้างหน้า', cls: '', items: soon.sort(byPriorityThenDue) },
-    { t: 'ไม่มีกำหนด', cls: '', items: someday.sort(byPriorityThenDue) }
+    { t: 'เลยกำหนด', cls: 'over', items: overdue },
+    { t: 'วันนี้', cls: '', items: today },
+    { t: '7 วันข้างหน้า', cls: '', items: soon },
+    { t: 'ถัดจากนั้น', cls: '', items: later },
+    { t: 'ไม่มีกำหนด', cls: '', items: someday }
   ].filter(s => s.items.length);
 
   if (!sections.length) {
-    host.innerHTML = '<p class="empty">ไม่มีงานค้าง 🎉</p>';
+    host.innerHTML = '<p class="empty">' +
+      (activeFilterCount() || filters.search ? 'ไม่มีงานตรงตัวกรอง' : 'ไม่มีงานค้าง 🎉') + '</p>';
     return;
   }
 
@@ -647,10 +833,10 @@ function renderMatrix() {
   const host = $('#eisen');
   const overrides = STATE.overrides || {};
   const buckets = {}; QUADS.forEach(q => buckets[q.key] = []);
-  quests().forEach(q => buckets[quadrantOf(q)].push(q));
+  visibleQuests().forEach(q => buckets[quadrantOf(q)].push(q));
 
   host.innerHTML = QUADS.map(qd => {
-    const items = buckets[qd.key].sort(byPriorityThenDue);
+    const items = buckets[qd.key];   // เรียงมาจาก visibleQuests แล้ว
     return '<div class="equad" data-quad="' + qd.key + '">' +
       '<h3>' + qd.title + '<span class="n">' + items.length + '</span></h3>' +
       '<p class="small muted hint">' + qd.hint + '</p>' +
@@ -756,11 +942,13 @@ function renderGantt() {
   const host = $('#gantt-body');
   const labels = skillLabels();
   const t0 = todayBkk();
+  const rangeDays = ganttDays();
   const days = Array.from({ length: rangeDays }, (_, i) => addDays(t0, i));
   const tEnd = addDays(t0, rangeDays);
   const cols = 'var(--gantt-label-w) repeat(' + rangeDays + ', minmax(26px, 1fr))';
 
-  const rows = (STATE.quests || []).filter(q => {
+  // ช่วงเวลาของไทม์ไลน์คุมด้วยคอลัมน์อยู่แล้ว จึงข้ามตัวกรองช่วงเวลาซ้ำ
+  const rows = visibleQuests({ includeEvents: true, ignoreRange: true }).filter(q => {
     const s = toDate(q.startDate), d = toDate(q.dueDate);
     if (!s && !d) return false;
     const a = s || d, b = d || s;
@@ -782,25 +970,25 @@ function renderGantt() {
     .filter(n => n.type === 'skill' || n.type === 'hub').map(n => n.skillId);
   const rank = s => { const i = order.indexOf(s); return i < 0 ? 999 : i; };
 
+  // ไม่ sort ซ้ำ — visibleQuests เรียงมาตามตัวเลือกในแถบกรองแล้ว
   Object.keys(groups).sort((a, b) => rank(a) - rank(b)).forEach(sk => {
     html += '<div class="ghead">' + esc(labels[sk] || sk) + '</div>';
-    groups[sk].sort((a, b) => (toDate(a.dueDate) || 0) - (toDate(b.dueDate) || 0))
-      .forEach(q => { html += ganttRow(q, t0, cols, false); });
+    groups[sk].forEach(q => { html += ganttRow(q, t0, cols, rangeDays, false); });
   });
 
   const events = rows.filter(q => q.entityClass === 'event');
   if (events.length) {
     html += '<div class="ghead">ตารางเวร · ' + events.length + ' รายการ (ไม่ได้ XP)</div>';
     events.sort((a, b) => (toDate(a.startDate) || 0) - (toDate(b.startDate) || 0))
-      .forEach(q => { html += ganttRow(q, t0, cols, true); });
+      .forEach(q => { html += ganttRow(q, t0, cols, rangeDays, true); });
   }
 
-  host.innerHTML = html;
+  host.innerHTML = html || '<p class="empty">ไม่มีงานในช่วงนี้</p>';
   host.querySelectorAll('.gbar').forEach(bindTip);
   host.querySelectorAll('button[data-done]').forEach(b => b.onclick = e => { e.stopPropagation(); doComplete(b.dataset.done, b); });
 }
 
-function ganttRow(q, t0, cols, isEvent) {
+function ganttRow(q, t0, cols, rangeDays, isEvent) {
   const s = toDate(q.startDate) || toDate(q.dueDate);
   const d = toDate(q.dueDate) || s;
   let a = Math.floor((bkkStartOfDay(s) - t0) / 86400000);
@@ -843,12 +1031,23 @@ function renderTree() {
   const project = g.nodes.find(n => n.type === 'project');
   const roots = project ? (childrenOf[project.id] || []) : [];
 
+  // ผังความคิดต้องเคารพตัวกรองและลำดับเดียวกับหน้าอื่น
+  const visible = visibleQuests();
+  const rankOf = {};
+  visible.forEach((q, i) => rankOf['q:' + q.taskId] = i);
+  const questVisible = id => rankOf[id] !== undefined;
+
   const dotColor = n => (n.type === 'hub' || n.type === 'skill') ? 'var(--cat-1)'
     : n.type === 'quest' ? 'var(--cat-2)' : 'var(--ink-muted)';
 
   function buildNode(id) {
     const n = byId[id]; if (!n) return '';
-    const kids = childrenOf[id] || [];
+    if (n.type === 'quest' && !questVisible(id)) return '';
+    let kids = childrenOf[id] || [];
+    // เควสใต้ทักษะ: ตัดตัวที่ถูกกรองออก แล้วเรียงตามลำดับเดียวกับหน้าอื่น
+    if (n.type === 'skill' || n.type === 'hub') {
+      kids = kids.filter(questVisible).sort((a, b) => rankOf[a] - rankOf[b]);
+    }
     const hasKids = kids.length > 0;
     const isStep = n.type === 'step';
     const open = treeOpen.has(id);
@@ -897,18 +1096,7 @@ function renderTree() {
 
 function renderTable() {
   const labels = skillLabels();
-  const sel = $('#tbl-skill');
-  if (sel.dataset.built !== '1') {
-    sel.innerHTML = '<option value="">ทุกทักษะ</option>' +
-      Object.keys(labels).map(id => '<option value="' + esc(id) + '">' + esc(labels[id]) + '</option>').join('');
-    sel.dataset.built = '1';
-  }
-
-  let rows = quests();
-  if (tableSearch) rows = rows.filter(q => q.title.toLowerCase().includes(tableSearch));
-  if (tableSkillFilter) rows = rows.filter(q => (q.skillId || 'unsorted') === tableSkillFilter);
-  rows = rows.sort(byPriorityThenDue);
-
+  const rows = visibleQuests();
   const tb = $('#tbl').querySelector('tbody');
   tb.innerHTML = rows.map(q => {
     const total = Number(q.itemCount) || 0, done = Number(q.itemDoneCount) || 0;
@@ -925,9 +1113,6 @@ function renderTable() {
 
   tb.querySelectorAll('button[data-done]').forEach(b => b.onclick = () => doComplete(b.dataset.done, b));
 }
-
-$('#tbl-search').oninput = e => { tableSearch = e.target.value.trim().toLowerCase(); renderTable(); };
-$('#tbl-skill').onchange = e => { tableSkillFilter = e.target.value; renderTable(); };
 
 // ───────── tooltip (เสริมเท่านั้น — ค่าทุกตัวอ่านได้จากมุมมองอื่น) ─────────
 
@@ -948,7 +1133,8 @@ function bindTip(el) {
 
 // ───────── เริ่มทำงาน ─────────
 
-if (!cfg().url || !cfg().token) {
+if (!cfg().token) {
+  $('#in-url').value = localStorage.getItem(LS.url) || DEFAULT_API_URL;
   $('#setup').classList.remove('hidden');
 } else {
   $('#app').classList.remove('hidden');
